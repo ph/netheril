@@ -81,7 +81,7 @@
               };
             };
 
-        rustVersion = pkgs.rust-bin.nightly.latest.default;
+        rustVersion = pkgs.rust-bin.stable.latest.default;
       in {
         devShell = pkgs.mkShell {
           buildInputs =
@@ -92,6 +92,8 @@
               pkgs.cloud-hypervisor
               pkgs.dosfstools
               pkgs.mtools
+              pkgs.gh
+              pkgs.act
               cloud-image
               cloud-hypervisor-firmware
             ];

@@ -2,9 +2,24 @@ CACHE_DIR?=.cache
 CLOUD_INIT_FILE?=$(CACHE_DIR)/cloud-init.img
 CLOUD_IMAGE_FILE?=$(CACHE_DIR)/cloud-image.raw
 
+## linter: Run the linter
+linter: clippy fmt ## - Run the linter
 
-## clean: Clean the cache directory
-clean: clean_cache ## - clean the cache directory
+## clippy: Run the clippy linter
+clippy: ## - Run the clippy linter
+	cargo clippy --all --all-features --tests -- -D warnings
+
+## fmt: Run the formatter
+fmt: ## - Run the formatter
+	cargo fmt --all --check
+
+## test: Run the tests
+test: linter fmt  ## - Run the tests
+	cargo test
+
+## ci-test: Run the tests in CI
+ci-test: ## - Test the github workflow locally
+	act -W ./.github/workflows/test-and-build.yml
 
 ## clean_cache: Clean the cache directory.
 clean_cache: ## - clean the cache directory
@@ -41,8 +56,3 @@ help: Makefile
 	@sed -n 's/^## //p' $< | awk 'BEGIN {FS = ":"}; { if(NF>1 && $$2!="") printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 ; else printf "%40s\n", $$1};'
 	@printf "Variables:\n"
 	@grep -E "^[A-Za-z0-9_]*\?=" $< | awk 'BEGIN {FS = "\\?="}; { printf "  \033[36m%-25s\033[0m  Default values: %s\n", $$1, $$2}'
-
-
-# ifeq (,$(wildcard $(CLOUD_IMAGE_FILE))
-# 	cp $CLOUD_IMAGE $(CLOUD_IMAGE_FILE)
-# endif
