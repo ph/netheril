@@ -1,9 +1,8 @@
 .cache/
 debug/
 target/
+.direnv/
 
 **/*.rs.bk
 
 *.pdb
-/.direnv/flake-profile-5-link
-/.direnv/
