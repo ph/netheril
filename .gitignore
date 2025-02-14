@@ -6,3 +6,4 @@ target/
 
 *.pdb
 /.direnv/flake-profile-5-link
+/.direnv/
