@@ -1,5 +1,4 @@
 use crate::cli::cli;
-use app::App;
 
 mod app;
 mod cli;
