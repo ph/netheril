@@ -1,5 +1,6 @@
 #[derive(Debug, Clone)]
 pub enum NetherilErr {
+    #[allow(dead_code)]
     Logging(String),
 }
 

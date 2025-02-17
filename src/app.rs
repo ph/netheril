@@ -3,6 +3,7 @@ use tracing::info;
 use crate::logging::{Logging, LoggingOptions};
 
 pub struct App {
+    #[allow(dead_code)]
     logging: Logging,
 }
 

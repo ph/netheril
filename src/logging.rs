@@ -8,6 +8,7 @@ use tracing_subscriber::{
 
 use crate::error::NetherilErr;
 
+#[allow(dead_code)]
 pub struct Logging {
     reload_handle: Handle<LevelFilter, Registry>,
     logging_options: LoggingOptions,
@@ -29,6 +30,7 @@ impl Logging {
         }
     }
 
+    #[allow(dead_code)]
     pub fn update(&mut self, options: LoggingOptions) -> Result<(), NetherilErr> {
         trace!("update: {:?}", options);
 
