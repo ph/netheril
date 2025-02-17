@@ -1,6 +1,9 @@
 use tracing::info;
 
-use crate::logging::{Logging, LoggingOptions};
+use crate::{
+    error::NetherilErr,
+    logging::{Logging, LoggingOptions},
+};
 
 pub struct App {
     #[allow(dead_code)]
@@ -14,8 +17,10 @@ impl App {
         App { logging }
     }
 
-    pub fn run(&self) {
+    pub fn run(&self) -> Result<(), Box<NetherilErr>> {
         info!("starting");
+        println!("Run!");
+        Ok(())
     }
 }
 
