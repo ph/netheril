@@ -5,9 +5,14 @@ CLOUD_IMAGE_FILE?=$(CACHE_DIR)/cloud-image.raw
 ## linter: Run the linter
 linter: clippy fmt ## - Run the linter
 
+## fix: Run the linter and make changes
+fix: ## - Run linter and make the changes locally automatically
+	@cargo fmt --all --check
+
 ## clippy: Run the clippy linter
 clippy: ## - Run the clippy linter
 	cargo clippy --all --all-features --tests -- -D warnings
+
 
 ## fmt: Run the formatter
 fmt: ## - Run the formatter
