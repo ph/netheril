@@ -94,6 +94,7 @@
               pkgs.mtools
               pkgs.gh
               pkgs.act
+              pkgs.libgit2
               cloud-image
               cloud-hypervisor-firmware
             ];

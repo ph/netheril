@@ -7,7 +7,7 @@ const COMMAND_ROOT: &str = "netheril";
 
 pub fn cmd() -> Command {
     Command::new(COMMAND_ROOT)
-        .about("netheril - a city for your application")
+        .about(format!("{} - a city for your application", COMMAND_ROOT))
         .bin_name(COMMAND_ROOT)
         .subcommand_required(true)
         .arg_required_else_help(true)
@@ -22,11 +22,11 @@ fn server_cmd() -> Command {
 #[derive(Debug, Clone)]
 struct ServerCmdArgs {}
 
-fn execute_server(args: ServerCmdArgs) -> Result<(), Box<dyn std::error::Error>> {
+async fn execute_server(args: ServerCmdArgs) -> Result<(), Box<dyn std::error::Error>> {
     trace!("execute_server: {:?}", args);
 
     let app = App::new();
-    app.run()?;
+    app.run().await?;
     Ok(())
 }
 
@@ -37,17 +37,17 @@ fn watch_cmd() -> Command {
 #[derive(Debug, Clone)]
 struct WatchCmdArgs {}
 
-fn execute_watch(args: WatchCmdArgs) -> Result<(), Box<dyn std::error::Error>> {
+async fn execute_watch(args: WatchCmdArgs) -> Result<(), Box<dyn std::error::Error>> {
     trace!("execute_watch: {:?}", args);
 
     Ok(())
 }
 
-pub fn cli() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn handle_cli() -> Result<(), Box<dyn std::error::Error>> {
     let matches = cmd().get_matches();
     match matches.subcommand() {
-        Some(("server", _)) => execute_server(ServerCmdArgs {}),
-        Some(("watch", _)) => execute_watch(WatchCmdArgs {}),
+        Some(("server", _)) => execute_server(ServerCmdArgs {}).await,
+        Some(("watch", _)) => execute_watch(WatchCmdArgs {}).await,
         _ => unreachable!(),
     }
 }
