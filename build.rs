@@ -1,8 +1,7 @@
 use vergen_git2::{BuildBuilder, Emitter, Git2Builder};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let _ = build_informations()?;
-    Ok(())
+    build_informations()
 }
 
 fn build_informations() -> Result<(), Box<dyn std::error::Error>> {

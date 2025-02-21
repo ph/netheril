@@ -4,7 +4,8 @@ use tracing::info;
 
 use crate::{
     error::NetherilErr,
-    logging::{Logging, LoggingOptions}, version::{self, Build},
+    logging::{Logging, LoggingOptions},
+    version::{self, Build},
 };
 
 pub struct App {
