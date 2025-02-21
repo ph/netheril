@@ -4,7 +4,7 @@ use tracing::info;
 
 use crate::{
     error::NetherilErr,
-    logging::{Logging, LoggingOptions},
+    logging::{Logging, LoggingOptions}, version::{self, Build},
 };
 
 pub struct App {
@@ -48,16 +48,14 @@ impl Default for App {
 #[derive(Serialize)]
 struct RootResponse {
     message: &'static str,
-    version: &'static str,
-    commit: &'static str,
+    build: Build,
 }
 
 impl Default for RootResponse {
     fn default() -> Self {
         RootResponse {
             message: "Hello from Netheril",
-            version: "1.0",
-            commit: "sha",
+            build: version::BUILD,
         }
     }
 }
