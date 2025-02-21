@@ -5,7 +5,6 @@ mod app;
 mod cli;
 mod error;
 mod logging;
-mod version;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
