@@ -1,4 +1,4 @@
-use crate::cli::cli;
+use cli::handle_cli;
 
 mod actor;
 mod app;
@@ -8,5 +8,6 @@ mod logging;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    cli()
+    handle_cli().await?;
+    Ok(())
 }
