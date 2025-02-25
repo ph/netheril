@@ -7,7 +7,7 @@ linter: clippy fmt ## - Run the linter
 
 ## fix: Run the linter and make changes
 fix: ## - Run linter and make the changes locally automatically
-	@cargo fmt --all --check
+	@cargo fmt --all
 
 ## clippy: Run the clippy linter
 clippy: ## - Run the clippy linter
