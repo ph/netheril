@@ -3,9 +3,9 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Debug, Clone, Copy, ToSchema)]
 pub struct Build {
-    version: &'static str,
-    git_sha: &'static str,
-    build_date: &'static str,
+    pub version: &'static str,
+    pub git_sha: &'static str,
+    pub build_date: &'static str,
 }
 
 pub static BUILD: Build = Build {
