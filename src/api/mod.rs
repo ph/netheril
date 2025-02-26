@@ -5,6 +5,8 @@ use axum::Router;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::services::ServiceRegistry;
+
 fn swagger_ui() -> SwaggerUi {
     #[derive(OpenApi)]
     #[openapi(

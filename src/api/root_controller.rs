@@ -2,7 +2,7 @@ use axum::{http::StatusCode, routing::get, Json, Router};
 use serde::Serialize;
 use utoipa::{OpenApi, ToSchema};
 
-use crate::version::{self, Build};
+use crate::{services::ServiceRegistry, version::{self, Build}};
 
 #[derive(OpenApi)]
 #[openapi(paths(index))]
@@ -45,6 +45,7 @@ mod test {
     use serde::Deserialize;
     use std::net::SocketAddr;
     use tokio::task::JoinHandle;
+    use crate::services::ServiceRegistry;
 
     use super::*;
 
@@ -140,7 +141,6 @@ mod test {
         let response: Response = client.get("/").send().await.unwrap().json().await.unwrap();
 
         assert_eq!(response.message, "Hello from Netheril");
-
         assert_eq!(response.build.version, BUILD.version);
         assert_eq!(response.build.git_sha, BUILD.git_sha);
         assert_eq!(response.build.build_date, BUILD.build_date);

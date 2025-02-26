@@ -1,6 +1,8 @@
-use axum::{extract::Path, http::StatusCode, routing::get, Json, Router};
+use axum::{extract::{Path, State}, http::StatusCode, routing::get, Json, Router};
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
+
+use crate::services::ServiceRegistry;
 
 #[derive(OpenApi)]
 #[openapi(paths(show))]
@@ -37,12 +39,23 @@ struct ShowResponse {
 	(status = OK, description = "Successfully retrieve the specified operation", body = ShowResponse)
     )
 )]
-async fn show(Path(ShowPath { id }): Path<ShowPath>) -> (StatusCode, Json<ShowResponse>) {
-    (
-        StatusCode::OK,
-        Json(ShowResponse {
-            operation_id: id,
-            status: Status::InProgress,
-        }),
-    )
+async fn show(State(service_registry): State<ServiceRegistry>,
+	      Path(ShowPath { id }): Path<ShowPath>) -> (StatusCode, Json<ShowResponse>) {
+
+    match service_registry.operation_service.find(&id) {
+	Some(operation_id) =>  (
+	    StatusCode::OK,
+	    Json(ShowResponse {
+		operation_id,
+		status: Status::InProgress,
+	    })
+	),
+	None => (
+	    StatusCode::NOT_FOUND,
+	    Json(ShowResponse {
+		operation_id: String::from("wweee not found"),
+		status: Status::InProgress,
+	    }),
+	),
+    }
 }
