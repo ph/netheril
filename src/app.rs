@@ -1,6 +1,6 @@
 use axum::Router;
 use tokio::sync::broadcast::{self, Receiver, Sender};
-use tracing::{info, trace};
+use tracing::info;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -17,7 +17,6 @@ pub struct App {
 #[derive(Debug, Clone)]
 enum Broadcast {
     Interrupt,
-    Reload,
 }
 
 impl std::fmt::Display for Broadcast {
@@ -26,7 +25,6 @@ impl std::fmt::Display for Broadcast {
 
         match self {
             Interrupt => write!(f, "broadcast interrupt"),
-            Reload => write!(f, "broadcast reload"),
         }
     }
 }
@@ -47,17 +45,17 @@ impl App {
             .await
             .map_err(|e| NetherilErr::Api(e.to_string()))?;
 
-        let (broadcast, mut rx) = broadcast::channel::<Broadcast>(1);
+        let (broadcast, rx) = broadcast::channel::<Broadcast>(1);
 
         let mut handles = Vec::new();
 
         let handle = tokio::spawn(async move {
-            register_signals(broadcast).await;
+            let _ = register_signals(broadcast).await;
         });
         handles.push(handle);
 
         let handle = tokio::spawn(async move {
-            let mut rx = rx.resubscribe();
+            let rx = rx.resubscribe();
 
             axum::serve(listener, router)
                 .with_graceful_shutdown(handle_shutdown_signal(rx))
@@ -76,11 +74,8 @@ impl App {
 }
 
 async fn handle_shutdown_signal(mut receiver: Receiver<Broadcast>) {
-    loop {
-        match receiver.recv().await {
-            Ok(Broadcast::Interrupt) | Err(_) => return,
-            _ => {}
-        }
+    match receiver.recv().await {
+        Ok(Broadcast::Interrupt) | Err(_) => (),
     }
 }
 
