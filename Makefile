@@ -22,6 +22,10 @@ fmt: ## - Run the formatter
 test: linter fmt  ## - Run the tests
 	cargo test
 
+## doc: Generate the doc
+doc: ## - Run the tests
+	cargo doc --no-deps --workspace
+
 ## ci-test: Run the tests in CI
 ci-test: ## - Test the github workflow locally
 	act -W ./.github/workflows/test-and-build.yml
