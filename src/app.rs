@@ -128,6 +128,10 @@ impl Default for App {
 struct OperationService {}
 
 impl OperationService {
+    fn new() -> Self {
+	Self {}
+    }
+
     fn find(id: &str) {
 	println!("find: {}", id);
     }
