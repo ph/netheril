@@ -152,6 +152,7 @@ mod operations {
     }
 
     #[derive(Debug, Serialize, ToSchema)]
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")] 
     enum Status {
 	Completed,
 	Error,
