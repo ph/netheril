@@ -96,12 +96,10 @@ async fn register_signals(broadcast: Sender<Broadcast>) -> Result<(), Box<dyn st
 
 fn router() -> Router {
     //.merge(self.swagger_ui())
-    Router::new()
-        .merge(swagger_ui())
-        .nest("/api/",
-	      root::router()
-	      .nest("/operations/", operations::router())
-	)
+    Router::new().merge(swagger_ui()).nest(
+        "/api/",
+        root::router().nest("/operations/", operations::router()),
+    )
 }
 
 pub fn swagger_ui() -> SwaggerUi {
@@ -125,22 +123,24 @@ impl Default for App {
     }
 }
 
+#[allow(unused)]
 struct OperationService {}
 
+#[allow(unused)]
 impl OperationService {
-    fn new() -> Self {
-	Self {}
+    pub fn new() -> Self {
+        Self {}
     }
 
-    fn find(id: &str) {
-	println!("find: {}", id);
+    pub fn find(&self, id: &str) {
+        println!("find: {}", id);
     }
 }
 
 mod operations {
-    use axum::{extract::{Path, Query}, http::StatusCode, routing::get, Json, Router};
+    use axum::{extract::Path, http::StatusCode, routing::get, Json, Router};
     use serde::{Deserialize, Serialize};
-    use utoipa::{openapi, OpenApi, ToSchema};
+    use utoipa::{OpenApi, ToSchema};
 
     #[derive(OpenApi)]
     #[openapi(paths(show))]
@@ -151,23 +151,23 @@ mod operations {
     }
 
     #[derive(Debug, Deserialize)]
-    struct ShowPath{
-	id: String,
+    struct ShowPath {
+        id: String,
     }
 
     #[derive(Debug, Serialize, ToSchema)]
-    #[serde(rename_all = "SCREAMING_SNAKE_CASE")] 
+    #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
     enum Status {
-	Completed,
-	Error,
-	Queued,
-	InProgress,
+        // Completed,
+        // Error,
+        // Queued,
+        InProgress,
     }
 
     #[derive(Debug, Serialize, ToSchema)]
     struct ShowResponse {
-	operation_id: String,
-	status: Status,
+        operation_id: String,
+        status: Status,
     }
 
     #[utoipa::path(
@@ -177,11 +177,14 @@ mod operations {
 	    (status = OK, description = "Successfully retrieve the specified operation", body = ShowResponse)
 	)
     )]
-    pub async fn show(Path(ShowPath { id }): Path<ShowPath>) -> (StatusCode, Json<ShowResponse>) {
-	(StatusCode::OK, Json(ShowResponse{
-	    operation_id: id,
-	    status: Status::InProgress,
-	}))
+    async fn show(Path(ShowPath { id }): Path<ShowPath>) -> (StatusCode, Json<ShowResponse>) {
+        (
+            StatusCode::OK,
+            Json(ShowResponse {
+                operation_id: id,
+                status: Status::InProgress,
+            }),
+        )
     }
 }
 
