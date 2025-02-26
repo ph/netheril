@@ -1,10 +1,12 @@
 use cli::handle_cli;
 
 mod actor;
+mod api;
 mod app;
 mod cli;
 mod error;
 mod logging;
+mod services;
 mod version;
 
 #[tokio::main]
