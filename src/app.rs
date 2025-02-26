@@ -1,5 +1,6 @@
 use axum::Router;
-use tracing::info;
+use tokio::sync::broadcast::{self, Receiver, Sender};
+use tracing::{info, trace};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -11,6 +12,24 @@ use crate::{
 pub struct App {
     #[allow(dead_code)]
     logging: Logging,
+}
+
+#[derive(Debug, Clone)]
+enum Broadcast {
+    Interrupt,
+    Reload
+}
+
+
+impl std::fmt::Display for Broadcast {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+	use Broadcast::*;
+	
+	match self {
+	    Interrupt => write!(f, "broadcast interrupt"),
+	    Reload => write!(f, "broadcast reload"),
+	}
+    }
 }
 
 impl App {
@@ -29,11 +48,54 @@ impl App {
             .await
             .map_err(|e| NetherilErr::Api(e.to_string()))?;
 
-        axum::serve(listener, router)
-            .await
-            .map_err(|e| NetherilErr::Api(e.to_string()))?;
+        let (broadcast, mut rx) = broadcast::channel::<Broadcast>(1);
+
+	let mut handles = Vec::new();
+
+	let handle = tokio::spawn(async move {
+	    register_signals(broadcast).await;
+	});
+	handles.push(handle);
+
+	let handle = tokio::spawn(async move {
+	    let mut rx =  rx.resubscribe();
+
+            axum::serve(listener, router)
+                .with_graceful_shutdown(handle_shutdown_signal(rx))
+                .await
+                .map_err(|e| NetherilErr::Api(e.to_string())).unwrap();
+	});
+	handles.push(handle);
+
+	for handle in handles { 
+	    handle.await.unwrap();
+	}
 
         Ok(())
+    }
+}
+
+async fn handle_shutdown_signal(mut receiver: Receiver<Broadcast>)  {
+    loop {
+	match receiver.recv().await {
+	    Ok(Broadcast::Interrupt) | Err(_) => return,
+	    _ => {}
+	}
+    }
+}
+
+async fn register_signals(broadcast: Sender<Broadcast>) -> Result<(), Box<dyn std::error::Error>> {
+    let mut interrupt_count = 0;
+    loop {
+	tokio::select!{
+	    _ = tokio::signal::ctrl_c() => {
+		interrupt_count += 1;
+		if interrupt_count > 1 {
+		    broadcast.send(Broadcast::Interrupt)?;
+		    return Ok(())
+		}
+	    }
+	}
     }
 }
 
