@@ -17,18 +17,17 @@ pub struct App {
 #[derive(Debug, Clone)]
 enum Broadcast {
     Interrupt,
-    Reload
+    Reload,
 }
-
 
 impl std::fmt::Display for Broadcast {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-	use Broadcast::*;
-	
-	match self {
-	    Interrupt => write!(f, "broadcast interrupt"),
-	    Reload => write!(f, "broadcast reload"),
-	}
+        use Broadcast::*;
+
+        match self {
+            Interrupt => write!(f, "broadcast interrupt"),
+            Reload => write!(f, "broadcast reload"),
+        }
     }
 }
 
@@ -50,52 +49,53 @@ impl App {
 
         let (broadcast, mut rx) = broadcast::channel::<Broadcast>(1);
 
-	let mut handles = Vec::new();
+        let mut handles = Vec::new();
 
-	let handle = tokio::spawn(async move {
-	    register_signals(broadcast).await;
-	});
-	handles.push(handle);
+        let handle = tokio::spawn(async move {
+            register_signals(broadcast).await;
+        });
+        handles.push(handle);
 
-	let handle = tokio::spawn(async move {
-	    let mut rx =  rx.resubscribe();
+        let handle = tokio::spawn(async move {
+            let mut rx = rx.resubscribe();
 
             axum::serve(listener, router)
                 .with_graceful_shutdown(handle_shutdown_signal(rx))
                 .await
-                .map_err(|e| NetherilErr::Api(e.to_string())).unwrap();
-	});
-	handles.push(handle);
+                .map_err(|e| NetherilErr::Api(e.to_string()))
+                .unwrap();
+        });
+        handles.push(handle);
 
-	for handle in handles { 
-	    handle.await.unwrap();
-	}
+        for handle in handles {
+            handle.await.unwrap();
+        }
 
         Ok(())
     }
 }
 
-async fn handle_shutdown_signal(mut receiver: Receiver<Broadcast>)  {
+async fn handle_shutdown_signal(mut receiver: Receiver<Broadcast>) {
     loop {
-	match receiver.recv().await {
-	    Ok(Broadcast::Interrupt) | Err(_) => return,
-	    _ => {}
-	}
+        match receiver.recv().await {
+            Ok(Broadcast::Interrupt) | Err(_) => return,
+            _ => {}
+        }
     }
 }
 
 async fn register_signals(broadcast: Sender<Broadcast>) -> Result<(), Box<dyn std::error::Error>> {
     let mut interrupt_count = 0;
     loop {
-	tokio::select!{
-	    _ = tokio::signal::ctrl_c() => {
-		interrupt_count += 1;
-		if interrupt_count > 1 {
-		    broadcast.send(Broadcast::Interrupt)?;
-		    return Ok(())
-		}
-	    }
-	}
+        tokio::select! {
+            _ = tokio::signal::ctrl_c() => {
+            interrupt_count += 1;
+            if interrupt_count > 1 {
+                broadcast.send(Broadcast::Interrupt)?;
+                return Ok(())
+            }
+            }
+        }
     }
 }
 
