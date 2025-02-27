@@ -8,7 +8,7 @@ use crate::services::ServiceRegistry;
 #[openapi(paths(show))]
 pub struct ApiDoc;
 
-pub fn router() -> Router {
+pub fn router() -> Router<ServiceRegistry> {
     Router::new().route("/{id}", get(show))
 }
 

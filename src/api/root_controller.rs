@@ -8,7 +8,7 @@ use crate::{services::ServiceRegistry, version::{self, Build}};
 #[openapi(paths(index))]
 pub struct ApiDoc;
 
-pub fn router() -> Router {
+pub fn router() -> Router<ServiceRegistry> {
     Router::new().route("/", get(index))
 }
 

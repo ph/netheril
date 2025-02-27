@@ -5,7 +5,7 @@ use axum::Router;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::services::ServiceRegistry;
+use crate::services::{OperationService, ServiceRegistry};
 
 fn swagger_ui() -> SwaggerUi {
     #[derive(OpenApi)]
@@ -22,7 +22,7 @@ fn swagger_ui() -> SwaggerUi {
     SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", doc)
 }
 
-pub fn router() -> Router {
+pub fn router() -> Router<ServiceRegistry> {
     Router::new().merge(swagger_ui()).nest(
         "/api/",
         root_controller::router().nest("/operations/", operations_controller::router()),
