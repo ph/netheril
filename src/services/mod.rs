@@ -7,8 +7,11 @@ impl OperationService {
     }
 
     pub fn find(&self, id: &str) -> Option<String> {
-        println!("find: {}", id);
-        Some(id.to_string())
+        if id == "111" {
+            Some(id.to_string())
+        } else {
+            None
+        }
     }
 }
 
