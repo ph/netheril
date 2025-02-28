@@ -1,7 +1,7 @@
-use std::net::SocketAddr;
-use reqwest::RequestBuilder;
-use tokio::{task::JoinHandle};
 use axum::Router;
+use reqwest::RequestBuilder;
+use std::net::SocketAddr;
+use tokio::task::JoinHandle;
 
 #[derive(Debug)]
 pub struct Client {
@@ -45,7 +45,7 @@ impl From<&str> for RelativeUrl {
             panic!("bad relative url: `{}`", value)
         }
 
-	RelativeUrl(value.to_string())
+        RelativeUrl(value.to_string())
     }
 }
 
@@ -54,22 +54,20 @@ pub struct TestServer {
     server_handle: JoinHandle<()>,
 }
 
-
 impl TestServer {
     async fn new(router: Router) -> Result<(Self, Client), Box<dyn std::error::Error>> {
-	const ANY_LOCAL_PORT: &str = "0.0.0.0:0";
+        const ANY_LOCAL_PORT: &str = "0.0.0.0:0";
 
-	let listener = tokio::net::TcpListener::bind(ANY_LOCAL_PORT).await?;
-	let addr = listener.local_addr()?;
+        let listener = tokio::net::TcpListener::bind(ANY_LOCAL_PORT).await?;
+        let addr = listener.local_addr()?;
 
-	let server_handle = tokio::spawn(async move {
+        let server_handle = tokio::spawn(async move {
             axum::serve(listener, router).await.unwrap();
-	});
+        });
 
-	Ok((Self { server_handle }, Client::new(addr)?))
+        Ok((Self { server_handle }, Client::new(addr)?))
     }
 }
-
 
 impl Drop for TestServer {
     fn drop(&mut self) {
@@ -78,6 +76,7 @@ impl Drop for TestServer {
 }
 
 pub async fn api_server(router: Router) -> (TestServer, Client) {
-    TestServer::new(router).await.expect("should create an api server ready for testing")
+    TestServer::new(router)
+        .await
+        .expect("should create an api server ready for testing")
 }
- 

@@ -1,4 +1,8 @@
-use netheril::{api::router, services::{OperationService, ServiceRegistry}, version::BUILD};
+use netheril::{
+    api::router,
+    services::{OperationService, ServiceRegistry},
+    version::BUILD,
+};
 use serde::Deserialize;
 
 use crate::common::api_server;
@@ -7,9 +11,9 @@ use crate::common::api_server;
 async fn it_should_return_the_build_information() {
     #[derive(Deserialize)]
     struct BuildResponse {
-	version: String,
-	git_sha: String,
-	build_date: String,
+        version: String,
+        git_sha: String,
+        build_date: String,
     }
 
     #[derive(Deserialize)]
@@ -19,7 +23,7 @@ async fn it_should_return_the_build_information() {
     }
 
     let services = ServiceRegistry {
-	operation_service: OperationService::new(),
+        operation_service: OperationService::new(),
     };
 
     let router = router().with_state(services);
