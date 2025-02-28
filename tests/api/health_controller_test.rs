@@ -1,4 +1,8 @@
-use netheril::{api::router, domains::health::{HealthView, State}, services::{OperationService, ServiceRegistry}};
+use netheril::{
+    api::router,
+    domains::health::{HealthView, State},
+    services::{OperationService, ServiceRegistry},
+};
 
 use crate::common::api_server;
 
