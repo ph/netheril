@@ -1,3 +1,4 @@
+#![allow(unused)]
 use async_trait::async_trait;
 use mailbox::{make_mailbox, Inbox, Mailbox};
 use tokio::{sync::mpsc::error::SendError, task::JoinHandle};
@@ -22,7 +23,6 @@ impl std::fmt::Display for ActorError {
 }
 
 #[derive(Debug, Clone)]
-#[allow(unused)]
 pub struct Context {
     id: Uuid,
 }
@@ -41,7 +41,6 @@ pub trait Actor: Send {
 }
 
 #[derive(Debug)]
-#[allow(unused)]
 pub struct Workspace {
     name: String,
 }
