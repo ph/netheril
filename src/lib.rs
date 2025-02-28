@@ -4,6 +4,7 @@ mod actor;
 pub mod api;
 pub mod app;
 mod cli;
+pub mod domains;
 pub mod error;
 mod logging;
 pub mod services;
