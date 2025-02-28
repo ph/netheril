@@ -1,3 +1,4 @@
+pub mod health_controller;
 pub mod operations_controller;
 pub mod root_controller;
 
@@ -26,7 +27,9 @@ fn swagger_ui() -> SwaggerUi {
 pub fn router() -> Router<ServiceRegistry> {
     Router::new().merge(swagger_ui()).nest(
         "/api/",
-        root_controller::router().nest("/operations/", operations_controller::router()),
+        root_controller::router()
+            .nest("/operations/", operations_controller::router())
+            .nest("/health", health_controller::router()),
     )
 }
 

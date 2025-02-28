@@ -8,6 +8,7 @@ pub mod error;
 mod logging;
 pub mod services;
 pub mod version;
+pub mod domains;
 
 pub async fn cli() -> Result<(), Box<dyn std::error::Error>> {
     handle_cli().await?;
