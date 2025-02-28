@@ -3,8 +3,8 @@ CLOUD_INIT_FILE?=$(CACHE_DIR)/cloud-init.img
 CLOUD_IMAGE_FILE=$(CACHE_DIR)/cloud-image.raw
 CLOUD_IMAGE?=/tmp/focal-server-cloudimg-amd64.img
 
-## linter: Run the linter
-linter: clippy fmt ## - Run the linter
+## check: Run the linters
+check: clippy fmt ## - Run the linter
 
 ## fix: Run the linter and make changes
 fix: ## - Run linter and make the changes locally automatically
