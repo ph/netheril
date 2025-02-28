@@ -1,13 +1,13 @@
 use cli::handle_cli;
 
 mod actor;
-mod api;
-mod app;
+pub mod api;
+pub mod app;
 mod cli;
-mod error;
+pub mod error;
 mod logging;
-mod services;
-mod version;
+pub mod services;
+pub mod version;
 
 pub async fn cli() -> Result<(), Box<dyn std::error::Error>> {
     handle_cli().await?;
