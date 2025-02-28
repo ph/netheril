@@ -1,6 +1,7 @@
 CACHE_DIR?=.cache
 CLOUD_INIT_FILE?=$(CACHE_DIR)/cloud-init.img
-CLOUD_IMAGE_FILE?=$(CACHE_DIR)/cloud-image.raw
+CLOUD_IMAGE_FILE=$(CACHE_DIR)/cloud-image.raw
+CLOUD_IMAGE?=/tmp/focal-server-cloudimg-amd64.img
 
 ## linter: Run the linter
 linter: clippy fmt ## - Run the linter
@@ -30,6 +31,11 @@ doc: ## - Run the tests
 ci-test: ## - Test the github workflow locally
 	act -W ./.github/workflows/test-and-build.yml
 
+## clean: Clean the project
+clean: clean_cache ## - Clean the projects source, remove caches and dependencies
+	cargo clean
+
+
 ## clean_cache: Clean the cache directory.
 clean_cache: ## - clean the cache directory
 	rm -rf $(CACHE_DIR)
@@ -38,9 +44,9 @@ $(CLOUD_INIT_FILE):
 	mkdir -p $(CACHE_DIR)
 	rm -f $(CLOUD_INIT_FILE)
 	mkdosfs -n CIDATA -C $(CLOUD_INIT_FILE) 8192
-	mcopy -oi $(CLOUD_INIT_FILE) -s test/data/cloud-init/user-data ::
-	mcopy -oi $(CLOUD_INIT_FILE) -s test/data/cloud-init/meta-data ::
-	mcopy -oi $(CLOUD_INIT_FILE) -s test/data/cloud-init/network-config ::
+	mcopy -oi $(CLOUD_INIT_FILE) -s tests/data/cloud-init/user-data ::
+	mcopy -oi $(CLOUD_INIT_FILE) -s tests/data/cloud-init/meta-data ::
+	mcopy -oi $(CLOUD_INIT_FILE) -s tests/data/cloud-init/network-config ::
 
 $(CLOUD_IMAGE_FILE):
 	mkdir -p $(CACHE_DIR)
