@@ -2,7 +2,10 @@ use axum::{http::StatusCode, routing::get, Json, Router};
 use serde::Serialize;
 use utoipa::{OpenApi, ToSchema};
 
-use crate::{services::ServiceRegistry, version::{self, Build}};
+use crate::{
+    services::ServiceRegistry,
+    version::{self, Build},
+};
 
 #[derive(OpenApi)]
 #[openapi(paths(index))]
@@ -107,7 +110,6 @@ async fn index() -> (StatusCode, Json<RootResponse>) {
 
 //             let listener = tokio::net::TcpListener::bind(ANY_LOCAL_PORT).await?;
 //             let addr = listener.local_addr()?;
-
 
 //             let server_handle = tokio::spawn(async move {
 //                 axum::serve(listener, router).await

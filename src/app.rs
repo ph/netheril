@@ -5,7 +5,7 @@ use crate::{
     api::router,
     error::NetherilErr,
     logging::{Logging, LoggingOptions},
-    services::{ServiceRegistry, OperationService}
+    services::{OperationService, ServiceRegistry},
 };
 
 pub struct App {
@@ -38,12 +38,11 @@ impl App {
     pub async fn run(&self) -> Result<(), Box<NetherilErr>> {
         info!("starting");
 
-	let services = ServiceRegistry {
-	    operation_service: OperationService::new(),
-	};
+        let services = ServiceRegistry {
+            operation_service: OperationService::new(),
+        };
 
-        let router = router()
-	    .with_state(services);
+        let router = router().with_state(services);
 
         let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
             .await

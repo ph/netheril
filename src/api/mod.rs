@@ -3,7 +3,7 @@ pub mod root_controller;
 
 use axum::{http::StatusCode, response::IntoResponse, Json, Router};
 use serde::Serialize;
-use utoipa::OpenApi;
+use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
 use crate::services::ServiceRegistry;
@@ -40,7 +40,7 @@ impl std::error::Error for ApiError {}
 impl std::fmt::Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            ApiError::NotFound => write!(f, "{}", "resource not found"),
+            ApiError::NotFound => write!(f, "resource not found"),
         }
     }
 }
@@ -59,7 +59,7 @@ impl IntoResponse for ApiError {
     }
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 struct ErrorView {
     error_message: &'static str,
 }
