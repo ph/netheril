@@ -1,4 +1,5 @@
 use axum::Router;
+use netheril::services::{operation_service::OperationService, pod_service::PodService, ServiceRegistry};
 use reqwest::RequestBuilder;
 use std::net::SocketAddr;
 use tokio::task::JoinHandle;
@@ -72,6 +73,13 @@ impl TestServer {
 impl Drop for TestServer {
     fn drop(&mut self) {
         self.server_handle.abort()
+    }
+}
+
+pub fn configure_services() -> ServiceRegistry {
+    ServiceRegistry {
+	operation_service: OperationService::new(),
+	pod_service: PodService::new(),
     }
 }
 

@@ -1,3 +1,4 @@
+#![allow(unused)]
 use async_trait::async_trait;
 use bollard::{image::CreateImageOptions, Docker};
 use serde::{Deserialize, Serialize};

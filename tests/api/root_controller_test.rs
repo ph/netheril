@@ -1,11 +1,10 @@
 use netheril::{
     api::router,
-    services::{OperationService, ServiceRegistry},
     version::BUILD,
 };
 use serde::Deserialize;
 
-use crate::common::api_server;
+use crate::common::{api_server, configure_services};
 
 #[tokio::test]
 async fn it_should_return_the_build_information() {
@@ -22,9 +21,7 @@ async fn it_should_return_the_build_information() {
         build: BuildResponse,
     }
 
-    let services = ServiceRegistry {
-        operation_service: OperationService::new(),
-    };
+    let services = configure_services();
 
     let router = router().with_state(services);
     let (_server, client) = api_server(router).await;

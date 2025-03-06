@@ -1,16 +1,13 @@
 use netheril::{
     api::router,
     domains::health::{HealthView, State},
-    services::{OperationService, ServiceRegistry},
 };
 
-use crate::common::api_server;
+use crate::common::{api_server, configure_services};
 
 #[tokio::test]
 async fn it_should_return_health_status() {
-    let services = ServiceRegistry {
-        operation_service: OperationService::new(),
-    };
+    let services = configure_services();
 
     let router = router().with_state(services);
     let (_server, client) = api_server(router).await;
