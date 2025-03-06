@@ -25,7 +25,7 @@ pub struct Configuration {}
 
 #[derive(Debug)]
 pub enum Action {
-   NewPod(Configuration)
+    NewPod(Configuration),
 }
 
 #[derive(Serialize, Clone, Debug, PartialEq, ToSchema)]
@@ -37,7 +37,6 @@ impl OperationId {
 	OperationId(Uuid::new_v4())
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct OperationService {
