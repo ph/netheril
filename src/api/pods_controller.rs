@@ -1,8 +1,8 @@
-use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router};
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json, Router, debug_handler};
 use serde::Serialize;
 use utoipa::{OpenApi, ToSchema};
 
-use crate::services::ServiceRegistry;
+use crate::services::{operation_service::OperationId, ServiceRegistry};
 
 use super::ApiError;
 
@@ -15,7 +15,9 @@ pub fn router() -> Router<ServiceRegistry> {
 }
 
 #[derive(Debug, Serialize, ToSchema)]
-struct NewOperationView{}
+struct NewOperationView{
+    operation_id: OperationId,
+}
 
 impl IntoResponse for NewOperationView{
     fn into_response(self) -> axum::response::Response {
@@ -23,6 +25,7 @@ impl IntoResponse for NewOperationView{
     }
 }
 
+#[debug_handler]
 #[utoipa::path(
     post,
     path = "/operations/",
@@ -31,5 +34,8 @@ impl IntoResponse for NewOperationView{
     )
 )]
 async fn create(State(_service_registry): State<ServiceRegistry>) -> Result<NewOperationView, ApiError> {
-    Ok(NewOperationView {})
+    println!("create");
+    Ok(NewOperationView {
+	operation_id: OperationId::generate(),
+    })
 }

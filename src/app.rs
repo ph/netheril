@@ -1,5 +1,6 @@
 use tokio::sync::broadcast::{self, Receiver, Sender};
-use tracing::info;
+use tower_http::trace::TraceLayer;
+use tracing::{debug, info};
 
 use crate::{
     api::router,
@@ -50,7 +51,7 @@ impl App {
 
         let services = self.configure_services();
 
-        let router = router().with_state(services);
+        let router = router().with_state(services).layer(TraceLayer::new_for_http());
 
         let listener = tokio::net::TcpListener::bind("0.0.0.0:3000")
             .await
@@ -94,14 +95,16 @@ async fn register_signals(broadcast: Sender<Broadcast>) -> Result<(), Box<dyn st
     let mut interrupt_count = 0;
     loop {
         tokio::select! {
-            _ = tokio::signal::ctrl_c() => {
-            interrupt_count += 1;
-            if interrupt_count > 1 {
-                broadcast.send(Broadcast::Interrupt)?;
-                return Ok(())
-            }
-            }
-        }
+	    _ = tokio::signal::ctrl_c() => {
+		interrupt_count += 1;
+		debug!(interrupt_count=interrupt_count, "ctl_c signal received");
+
+		if interrupt_count > 1 {
+		    broadcast.send(Broadcast::Interrupt)?;
+		    return Ok(())
+		}
+	    }
+	}
     }
 }
 

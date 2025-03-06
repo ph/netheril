@@ -32,8 +32,8 @@ pub fn router() -> Router<ServiceRegistry> {
         "/api/",
         root_controller::router()
             .nest("/operations/", operations_controller::router())
-            .nest("/health", health_controller::router())
-            .nest("/pods", pods_controller::router()),
+            .nest("/health/", health_controller::router())
+            .nest("/pods/", pods_controller::router()),
     )
 }
 

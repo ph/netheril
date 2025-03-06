@@ -1,6 +1,7 @@
 use serde::Serialize;
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tracing::debug;
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 const OPERATION_QUEUE_SIZE: usize = 100;
@@ -27,7 +28,7 @@ pub enum Action {
    NewPod(Configuration)
 }
 
-#[derive(Serialize, Clone, Debug, PartialEq)]
+#[derive(Serialize, Clone, Debug, PartialEq, ToSchema)]
 pub struct OperationId(uuid::Uuid);
 
 
@@ -36,6 +37,7 @@ impl OperationId {
 	OperationId(Uuid::new_v4())
     }
 }
+
 
 #[derive(Debug, Clone)]
 pub struct OperationService {

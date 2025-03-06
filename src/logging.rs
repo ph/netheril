@@ -54,6 +54,8 @@ pub struct LoggingOptions {
 
 impl Default for LoggingOptions {
     fn default() -> Self {
-        LoggingOptions { level: Level::WARN }
+        LoggingOptions {
+            level: Level::DEBUG,
+        }
     }
 }
