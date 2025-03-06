@@ -1,5 +1,6 @@
 use serde::Serialize;
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
+use tracing::debug;
 use uuid::Uuid;
 
 const OPERATION_QUEUE_SIZE: usize = 100;
@@ -61,6 +62,8 @@ impl OperationService {
     }
 
     pub fn schedule(&self, action: Action) -> Result<OperationId, OperationError> {
+	debug!(action=?action, "schedule action");
+
 	let operation = Operation::new(action);
 	let id = operation.id();
 
