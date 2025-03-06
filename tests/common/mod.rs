@@ -77,8 +77,9 @@ impl Drop for TestServer {
 }
 
 pub fn configure_services() -> ServiceRegistry {
+    let (_, operation_service) = OperationService::build();
     ServiceRegistry {
-	operation_service: OperationService::new(),
+	operation_service: operation_service,
 	pod_service: PodService::new(),
     }
 }
