@@ -8,7 +8,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use utoipa::{OpenApi, ToSchema};
 
-use crate::services::ServiceRegistry;
+use crate::{models::operation::Status, services::ServiceRegistry};
 
 use super::ApiError;
 
@@ -23,15 +23,6 @@ pub fn router() -> Router<ServiceRegistry> {
 #[derive(Debug, Deserialize)]
 struct ShowPath {
     id: String,
-}
-
-#[derive(Debug, Serialize, ToSchema)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-enum Status {
-    // Completed,
-    // Error,
-    // Queued,
-    InProgress,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -60,7 +51,7 @@ async fn show(
     match service_registry.operation_service.find(&id) {
         Some(operation_id) => Ok(ShowView {
             operation_id,
-            status: Status::InProgress,
+            status: Status::Queued,
         }),
         None => Err(ApiError::NotFound),
     }

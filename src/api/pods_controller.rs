@@ -2,7 +2,7 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::po
 use serde::Serialize;
 use utoipa::{OpenApi, ToSchema};
 
-use crate::services::{operation_service::OperationId, ServiceRegistry};
+use crate::{models::operation::OperationId, services::ServiceRegistry};
 
 use super::ApiError;
 

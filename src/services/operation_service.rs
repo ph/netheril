@@ -4,6 +4,8 @@ use tracing::debug;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
+use crate::models::operation::OperationId;
+
 const OPERATION_QUEUE_SIZE: usize = 100;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -26,16 +28,6 @@ pub struct Configuration {}
 #[derive(Debug)]
 pub enum Action {
     NewPod(Configuration),
-}
-
-#[derive(Serialize, Clone, Debug, PartialEq, ToSchema)]
-pub struct OperationId(uuid::Uuid);
-
-
-impl OperationId {
-    pub fn generate() -> Self {
-	OperationId(Uuid::new_v4())
-    }
 }
 
 #[derive(Debug, Clone)]
