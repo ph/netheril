@@ -70,11 +70,17 @@ impl Runner for DockerRunner {
             .try_collect::<Vec<_>>()
 	    .await
             .map_err(|e| NetherilErr::Runner(e.to_string()))?;
+
 	println!("streams: {:?}", ok);
 
         Ok(())
     }
 }
+
+// struct Docker;
+// create();
+// destroy();
+// stop();
 
 fn create(configuration: Configuration) -> Result<impl Runner, NetherilErr> {
     match configuration {

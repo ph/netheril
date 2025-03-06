@@ -4,8 +4,7 @@ use tracing::info;
 use crate::{
     api::router,
     error::NetherilErr,
-    logging::{Logging, LoggingOptions},
-    services::{OperationService, ServiceRegistry},
+    logging::{Logging, LoggingOptions}, services::{operation_service::OperationService, pod_service::PodService, ServiceRegistry},
 };
 
 pub struct App {
@@ -35,12 +34,19 @@ impl App {
         App { logging }
     }
 
+    fn configure_services(&self) -> ServiceRegistry{
+	info!("configure services");
+
+        ServiceRegistry {
+            operation_service: OperationService::new(),
+	    pod_service: PodService::new(),
+        }
+    }
+
     pub async fn run(&self) -> Result<(), Box<NetherilErr>> {
         info!("starting");
 
-        let services = ServiceRegistry {
-            operation_service: OperationService::new(),
-        };
+        let services = self.configure_services();
 
         let router = router().with_state(services);
 

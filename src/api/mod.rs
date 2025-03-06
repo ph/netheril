@@ -1,5 +1,6 @@
 pub mod health_controller;
 pub mod operations_controller;
+pub mod pods_controller;
 pub mod root_controller;
 
 use axum::{http::StatusCode, response::IntoResponse, Json, Router};
@@ -7,7 +8,7 @@ use serde::Serialize;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 
-use crate::services::ServiceRegistry;
+use crate::services::{operation_service::OperationError, ServiceRegistry};
 
 fn swagger_ui() -> SwaggerUi {
     #[derive(OpenApi)]
@@ -15,6 +16,8 @@ fn swagger_ui() -> SwaggerUi {
 	nest(
 	    (path = "/api", api = root_controller::ApiDoc),
 	    (path = "/api/operations/", api = operations_controller::ApiDoc),
+	    (path = "/api/pods/", api = pods_controller::ApiDoc),
+	    (path = "/api/health/", api = health_controller::ApiDoc),
 	)
     )]
     struct ApiDoc;
@@ -29,13 +32,17 @@ pub fn router() -> Router<ServiceRegistry> {
         "/api/",
         root_controller::router()
             .nest("/operations/", operations_controller::router())
-            .nest("/health", health_controller::router()),
+            .nest("/health", health_controller::router())
+            .nest("/pods", pods_controller::router()),
     )
 }
 
-#[derive(Debug, Clone)]
+type AnyKindError = Box<dyn std::error::Error + Send + Sync + 'static>;
+
+#[derive(Debug)]
 enum ApiError {
     NotFound,
+    TooManyRequests { source: AnyKindError },
 }
 
 impl std::error::Error for ApiError {}
@@ -44,6 +51,9 @@ impl std::fmt::Display for ApiError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ApiError::NotFound => write!(f, "resource not found"),
+            ApiError::TooManyRequests { source } => {
+                write!(f, "too many request, error: {}", source)
+            }
         }
     }
 }
@@ -54,7 +64,14 @@ impl IntoResponse for ApiError {
             ApiError::NotFound => (
                 StatusCode::NOT_FOUND,
                 ErrorView {
-                    error_message: "resource not found",
+                    error_message: format!("{}", self),
+                },
+            )
+                .into_response(),
+            ApiError::TooManyRequests { source } => (
+                StatusCode::TOO_MANY_REQUESTS,
+                ErrorView {
+                    error_message: format!("{}", source),
                 },
             )
                 .into_response(),
@@ -62,9 +79,19 @@ impl IntoResponse for ApiError {
     }
 }
 
+impl From<OperationError> for ApiError {
+    fn from(value: OperationError) -> Self {
+        match value {
+            OperationError::QueueFull => ApiError::TooManyRequests {
+                source: Box::new(value),
+            },
+        }
+    }
+}
+
 #[derive(Serialize, Debug, ToSchema)]
 struct ErrorView {
-    error_message: &'static str,
+    error_message: String,
 }
 
 impl IntoResponse for ErrorView {
