@@ -2,7 +2,7 @@ use axum::{routing::get, Router};
 use utoipa::OpenApi;
 
 use crate::{
-    domains::health::{Health, HealthView},
+    models::health::{Health, HealthView},
     services::ServiceRegistry,
 };
 

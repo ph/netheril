@@ -6,7 +6,7 @@ mod logging;
 pub mod actors;
 pub mod api;
 pub mod app;
-pub mod domains;
+pub mod models;
 pub mod error;
 pub mod services;
 pub mod version;

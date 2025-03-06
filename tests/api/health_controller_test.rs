@@ -1,6 +1,6 @@
 use netheril::{
     api::router,
-    domains::health::{HealthView, State},
+    models::health::{HealthView, State},
 };
 
 use crate::common::{api_server, configure_services};
