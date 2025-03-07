@@ -2,7 +2,7 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::po
 use serde::Serialize;
 use utoipa::{OpenApi, ToSchema};
 
-use crate::{models::operation::OperationId, services::ServiceRegistry};
+use crate::services::ServiceRegistry;
 
 use super::ApiError;
 
@@ -16,7 +16,7 @@ pub fn router() -> Router<ServiceRegistry> {
 
 #[derive(Debug, Serialize, ToSchema)]
 struct NewOperationView{
-    operation_id: OperationId,
+    operation_id: String,
 }
 
 impl IntoResponse for NewOperationView{
@@ -36,6 +36,6 @@ impl IntoResponse for NewOperationView{
 async fn create(State(_service_registry): State<ServiceRegistry>) -> Result<NewOperationView, ApiError> {
     println!("create");
     Ok(NewOperationView {
-	operation_id: OperationId::generate(),
+	operation_id: String::from("okok"),
     })
 }
