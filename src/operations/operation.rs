@@ -4,6 +4,14 @@ use super::{BoxedError, Id};
 
 pub trait State: Send + Sync + std::fmt::Debug + 'static {}
 
+pub enum OperationState {
+    Queue(Operation<Queue>),
+    Working(Operation<Working>),
+    Completed(Operation<Completed>),
+    Canceled(Operation<Canceled>),
+    Failed(Operation<Failed>),
+}
+
 // Possible State
 #[derive(Debug)]
 pub struct Queue;

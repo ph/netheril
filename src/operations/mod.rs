@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use async_trait::async_trait;
-use operation::{Operation, Queue, State};
+use operation::{Operation, OperationState, Queue, State};
 use serde::Serialize;
 use tokio::sync::{mpsc::Sender, oneshot};
 use utoipa::ToSchema;
@@ -45,8 +45,8 @@ enum Message<S: State> {
     },
 }
 
-struct OperationMonitor<S: State> {
-    operations: BTreeMap<Id, Box<Operation<S>>>,
+struct OperationMonitor {
+    operations: BTreeMap<Id, OperationState>,
 }
 
 impl<S: State> OperationMonitor<S> {
