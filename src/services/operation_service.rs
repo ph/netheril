@@ -1,8 +1,5 @@
-use serde::Serialize;
 use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
 use tracing::debug;
-use utoipa::ToSchema;
-use uuid::Uuid;
 
 use crate::models::operation::OperationId;
 
@@ -31,18 +28,18 @@ pub enum Action {
 }
 
 #[derive(Debug, Clone)]
-pub struct OperationService {
-    tx: Sender<Operation>,
+pub struct OperationService<T> {
+    tx: Sender<Operation<T>>,
 }
 
-impl OperationService {
-    pub fn build()  -> (Receiver<Operation>, Self){
-	let (tx, rx) = mpsc::channel::<Operation>(OPERATION_QUEUE_SIZE);
+impl<T> OperationService<T> {
+    pub fn build()  -> (Receiver<Operation<T>>, Self){
+	let (tx, rx) = mpsc::channel::<Operation<T>>(OPERATION_QUEUE_SIZE);
 	let service = Self::new(tx);
 	(rx, service)
     }
 
-    pub fn new(tx: Sender<Operation>) -> Self {
+    pub fn new(tx: Sender<Operation<T>>) -> Self {
         Self { tx }
     }
 
@@ -68,32 +65,16 @@ impl OperationService {
     }
 }
 
-pub struct Operation {
-    id: OperationId,
-    kind: Action,
-}
-
-impl Operation {
-    pub fn new(kind: Action) -> Self {
-	Operation {
-	    id: OperationId::generate(),
-	    kind,
-	}
-    }
-
-    pub fn id(&self) -> OperationId {
-	self.id.clone()
-    }
-}
-
 #[cfg(test)]
 mod test {
     use tokio::sync::mpsc;
 
+    use crate::models::operation::Operation;
+
     use super::*;
 
-    fn service() -> (Receiver<Operation>, OperationService) {
-	let (tx, rx) = mpsc::channel::<Operation>(1);
+    fn service() -> (Receiver<Operation<Action>>, OperationService) {
+	let (tx, rx) = mpsc::channel::<Operation<Action>>(1);
 	let service = OperationService::new(tx);
 
 	(rx, service)

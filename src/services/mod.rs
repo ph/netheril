@@ -6,6 +6,6 @@ pub mod pod_service;
 
 #[derive(Debug, Clone)]
 pub struct ServiceRegistry {
-    pub operation_service: OperationService,
+    pub operation_service: OperationService<Action>,
     pub pod_service: PodService,
 }

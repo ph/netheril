@@ -11,9 +11,23 @@ impl OperationId {
     }
 }
 
+enum ActionType {
+    NewPod,
+    KillPod,
+}
+
 #[derive(Debug)]
-struct Operation {
+pub struct Operation> {
     id: OperationId,
+    action: ActionType,
+    status: Status,
+}
+
+impl Operation {
+    fn new(action: ActionType) -> Self {
+        let id = Operation::generate();
+        Operation { id, action }
+    }
 }
 
 #[derive(Debug, Serialize, ToSchema)]
