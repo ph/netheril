@@ -3,6 +3,7 @@ use cli::handle_cli;
 mod actor;
 mod cli;
 mod logging;
+mod operations;
 pub mod api;
 pub mod app;
 pub mod models;
