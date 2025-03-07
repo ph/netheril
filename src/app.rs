@@ -38,6 +38,7 @@ impl App {
     fn configure_services(&self) -> ServiceRegistry{
 	info!("configure services");
 
+
         ServiceRegistry {
             operation_service: OperationService::new(),
 	    pod_service: PodService::new(),

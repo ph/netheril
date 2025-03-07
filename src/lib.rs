@@ -4,6 +4,7 @@ mod actor;
 mod cli;
 mod logging;
 mod operations;
+mod pod;
 pub mod api;
 pub mod app;
 pub mod models;
