@@ -19,12 +19,12 @@ impl std::fmt::Display for Priority {
 }
 
 #[derive(Debug)]
-pub struct Envelop<M: std::fmt::Debug> {
+pub struct Envelop<M> {
     priority: Priority,
     message: M,
 }
 
-impl<M: std::fmt::Debug> Envelop<M> {
+impl<M> Envelop<M> {
     fn normal(message: M) -> Envelop<M> {
         Envelop {
             message,

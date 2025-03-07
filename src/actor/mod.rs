@@ -35,7 +35,7 @@ impl Context {
 
 #[async_trait]
 pub trait Actor: Send {
-    type Message: std::fmt::Debug + Send + Sync + 'static;
+    type Message: Send + Sync + 'static;
 
     async fn handle(&mut self, ctx: &Context, message: Self::Message) -> Result<(), ActorError>;
 }
