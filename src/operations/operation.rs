@@ -1,118 +1,113 @@
 use tracing::trace;
 
-use super::{BoxedError, Id};
+use crate::error::NetherilErr;
 
-pub trait State: Send + Sync + std::fmt::Debug + 'static {}
+use super::Id;
 
-pub enum OperationState {
-    Queue(Operation<Queue>),
-    Working(Operation<Working>),
-    Completed(Operation<Completed>),
-    Canceled(Operation<Canceled>),
-    Failed(Operation<Failed>),
+#[derive(Debug)]
+pub enum OperationErr {
+    InvalidTransition { from: State, to: State },
 }
 
-// Possible State
-#[derive(Debug)]
-pub struct Queue;
-
-#[derive(Debug)]
-pub struct Working;
-
-#[derive(Debug)]
-pub struct Completed;
-
-#[derive(Debug)]
-pub struct Canceled;
-
-#[derive(Debug)]
-pub struct Failed {
-    error: BoxedError,
+impl std::error::Error for OperationErr {}
+impl std::fmt::Display for OperationErr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            OperationErr::InvalidTransition { from, to } => {
+                write!(f, "invalid transition from `{}` to `{}`", from, to)
+            }
+        }
+    }
 }
 
-impl State for Queue {}
-impl State for Working {}
-impl State for Completed {}
-impl State for Canceled {}
-impl State for Failed {}
+#[derive(Debug, Clone)]
+pub enum State {
+    New,
+    Queued,
+    Started,
+    Completed,
+    Canceled,
+    Failed { error: NetherilErr },
+}
 
-struct Data {
+impl std::fmt::Display for State {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            State::New => write!(f, "new"),
+            State::Queued => write!(f, "queued"),
+            State::Started => write!(f, "started"),
+            State::Completed => write!(f, "completed"),
+            State::Canceled => write!(f, "canceled"),
+            State::Failed { error } => write!(f, "failed (error: {})", error),
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum Transition {
+    Create,
+    Enqueue,
+    Start,
+    Complete,
+    Cancel,
+    Fail { error: NetherilErr },
+}
+
+pub struct Operation {
     id: Id,
+    state: State,
+    // created_at
+    // end_at
 }
 
-pub struct Operation<S: State + ?Sized> {
-    inner: Data,
-    state: Box<S>,
-}
+impl Operation {
+    pub fn new() -> Self {
+        Operation {
+            id: Id::generate(),
+            state: State::New,
+        }
+    }
 
-impl<S: State> Operation<S> {
     pub fn id(&self) -> Id {
-        self.inner.id
+        self.id.clone()
     }
-}
 
-impl<T: State> Operation<T> {
-    pub fn new() -> Operation<Queue> {
-        Operation {
-            inner: Data { id: Id::generate() },
-            state: Box::new(Queue {}),
-        }
-    }
-}
-
-impl Operation<Queue> {
-    fn start(self) -> Operation<Working> {
-        trace!(id = ?self.inner.id, "start operation");
-
-        Operation {
-            inner: self.inner,
-            state: Box::new(Working {}),
+    pub fn handle_event(self, transition: Transition) -> Result<(), OperationErr> {
+        match transition {
+            Transition::Create => Err(OperationErr::InvalidTransition {
+                from: State::New,
+                to: State::New,
+            }),
+            Transition::Enqueue => self.apply_transition(State::Queued),
+            Transition::Start => self.apply_transition(State::Started),
+            Transition::Complete => self.apply_transition(State::Completed),
+            Transition::Cancel => self.apply_transition(State::Canceled),
+            Transition::Fail { error } => self.apply_transition(State::Failed { error: error }),
         }
     }
 
-    fn cancel(self) -> Operation<Canceled> {
-        trace!(id = ?self.inner.id, "cancel operation");
+    fn apply_transition(mut self, new_state: State) -> Result<(), OperationErr> {
+        let valid = match (self.state.clone(), new_state.clone()) {
+            (State::New, State::Queued | State::Canceled) => true,
+            (State::Queued, State::Started | State::Canceled) => true,
+            (State::Started, State::Completed | State::Canceled | State::Failed { .. }) => true,
+            _ => false,
+        };
 
-        Operation {
-            inner: self.inner,
-            state: Box::new(Canceled {}),
+        if valid {
+            trace!(
+                id = ?self.id,
+                "transition from `{}` to `{}`",
+                self.state,
+                new_state
+            );
+            self.state = new_state;
+            return Ok(());
         }
-    }
-}
 
-impl Operation<Working> {
-    fn cancel(self) -> Operation<Canceled> {
-        trace!(id = ?self.inner.id, "cancel operation");
-
-        Operation {
-            inner: self.inner,
-            state: Box::new(Canceled {}),
-        }
-    }
-
-    fn complete(self) -> Operation<Completed> {
-        trace!(id = ?self.inner.id, "complete operation");
-
-        Operation {
-            inner: self.inner,
-            state: Box::new(Completed {}),
-        }
-    }
-
-    fn fail(self, error: BoxedError) -> Operation<Failed> {
-        trace!(id = ?self.inner.id, error = error, "fail operation");
-
-        Operation {
-            inner: self.inner,
-            state: Box::new(Failed { error: error }),
-        }
-    }
-}
-
-impl Operation<Completed> {}
-impl Operation<Canceled> {}
-impl Operation<Failed> {
-    fn error(self) -> BoxedError {
-        self.state.error
+        Err(OperationErr::InvalidTransition {
+            from: self.state.clone(),
+            to: new_state,
+        })
     }
 }

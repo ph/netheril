@@ -117,7 +117,7 @@ mod test {
                 Message::GetCounter(reply_to) => {
                     let _ = reply_to.send(self.count);
                 }
-            }
+	    }
 
             Ok(())
         }

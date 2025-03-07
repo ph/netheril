@@ -1,20 +1,18 @@
 use std::collections::BTreeMap;
 
 use async_trait::async_trait;
-use operation::{Operation, OperationState, Queue, State};
+use operation::Operation;
 use serde::Serialize;
-use tokio::sync::{mpsc::Sender, oneshot};
+use tokio::sync::oneshot::{self, error::RecvError};
 use utoipa::ToSchema;
 use uuid::Uuid;
 
-use crate::actor::{Actor, ActorError, Context};
+use crate::{actor::{mailbox::Mailbox, Actor, ActorError, Context}, error::NetherilErr};
 mod operation;
 
 
 #[derive(Serialize, Clone, Debug, PartialEq, ToSchema, Copy, PartialOrd, Ord, Eq)]
 pub struct Id(uuid::Uuid);
-
-type BoxedError = Box<dyn std::error::Error + Sync + Send + 'static>; 
 
 impl Id {
     pub fn generate() -> Self {
@@ -22,10 +20,10 @@ impl Id {
     }
 }
 
-enum Message<S: State> {
+enum Message {
     Find {
 	id: Id,
-	reply_to: oneshot::Sender<Option<Operation<S>>>,
+	reply_to: oneshot::Sender<Option<Operation>>,
     },
     Create {
 	reply_to: oneshot::Sender<Id>,
@@ -41,15 +39,15 @@ enum Message<S: State> {
     },
     Fail {
 	id: Id,
-	error: BoxedError,
+	error: NetherilErr,
     },
 }
 
 struct OperationMonitor {
-    operations: BTreeMap<Id, OperationState>,
+    operations: BTreeMap<Id, Operation>,
 }
 
-impl<S: State> OperationMonitor<S> {
+impl OperationMonitor {
     fn new() -> Self {
 	OperationMonitor {
 	    operations: BTreeMap::new(),
@@ -58,26 +56,24 @@ impl<S: State> OperationMonitor<S> {
 }
 
 #[async_trait]
-impl<S: State> Actor for OperationMonitor<S> {
-    type Message = Message<S>;
+impl Actor for OperationMonitor {
+    type Message = Message;
 
     async fn handle(
 	&mut self,
 	_ctx: &Context,
-	message: Message<S>,
+	message: Self::Message,
     ) -> Result<(), ActorError> {
 	match message {
 	    Message::Create { reply_to } => {
-		let operation:Operation<Queue> = Operation::new();
+		let operation = Operation::new();
 		let operation_id = operation.id();
-		self.operations.insert(operation_id, Box::new(operation));
-
-		reply_to.send(operation_id);
-
+		self.operations.insert(operation_id.clone(), operation);
+		reply_to.send(operation_id).unwrap();
 		Ok(())
 	    }
 	    Message::Start { .. } => Ok(()),
-	    Message::Cancel {.. } => Ok(()),
+	    Message::Cancel { .. } => Ok(()),
 	    Message::Complete { .. } => Ok(()),
 	    Message::Fail { .. } => Ok(()),
 	    Message::Find { .. } => Ok(()),
@@ -85,22 +81,48 @@ impl<S: State> Actor for OperationMonitor<S> {
     }
 }
 
-struct OperationMonitorHandle<T: State> {
-    sender: Sender<Message<T>>,
+struct OperationMonitorHandle {
+    mailbox: Mailbox<OperationMonitor>,
 }
 
-impl<T: State> OperationMonitorHandle<T> {
-    async fn find(&self, id: Id) -> Option<Operation<T>> {
+impl OperationMonitorHandle {
+    fn new(mailbox: Mailbox<OperationMonitor>)  -> Self {
+	OperationMonitorHandle{
+	    mailbox
+	}
+    }
+    async fn find(&self, id: Id) -> Result<Option<Operation>, RecvError> {
 	let (tx, rx) = oneshot::channel();
-	self.sender.send(Message::Find { id: id, reply_to: tx });
-	rx.await.expect("What")
+	self.mailbox.send(Message::Find { id: id, reply_to: tx });
+	rx.await
+    }
+
+    async fn create(&self) -> Result<Id, RecvError> {
+	let (tx, rx) = oneshot::channel();
+	self.mailbox.send(Message::Create { reply_to: tx });
+	rx.await
     }
 }
 
 #[cfg(test)]
 mod test {
-    #[test]
-    fn return_the_operation_if_id_exist() {
-	
+    use super::*;
+    use crate::actor::Workspace;
+
+    #[tokio::test]
+    async fn create_new_operation() {
+	let workspace = Workspace::default();
+	let monitor = OperationMonitor::new();
+	let (mailbox, monitor_loop) = workspace.spawn(monitor);
+	let handle = OperationMonitorHandle::new(mailbox);
+
+	let job = async {
+	    let id = handle.create().await.unwrap();
+	};
+
+	tokio::join!(
+	    job,
+	    monitor_loop
+	);
     }
 }
