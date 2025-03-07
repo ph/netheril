@@ -38,10 +38,8 @@ impl App {
     fn configure_services(&self) -> ServiceRegistry{
 	info!("configure services");
 
-	let (_, operation_service) = OperationService::build();
-
         ServiceRegistry {
-            operation_service: operation_service,
+            operation_service: OperationService::new(),
 	    pod_service: PodService::new(),
         }
     }

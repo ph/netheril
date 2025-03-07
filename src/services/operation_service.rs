@@ -1,10 +1,3 @@
-use tokio::sync::mpsc::{self, error::TrySendError, Receiver, Sender};
-use tracing::debug;
-
-use crate::models::operation::OperationId;
-
-const OPERATION_QUEUE_SIZE: usize = 100;
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum OperationError {
     QueueFull,
@@ -13,34 +6,17 @@ pub enum OperationError {
 impl std::error::Error for OperationError {}
 impl std::fmt::Display for OperationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-	match self {
-	    OperationError::QueueFull => write!(f, "internal queue is full")
-	}
+        match self {
+            OperationError::QueueFull => write!(f, "internal queue is full"),
+        }
     }
 }
-
 #[derive(Debug, Clone)]
-pub struct Configuration {}
+pub struct OperationService {}
 
-#[derive(Debug)]
-pub enum Action {
-    NewPod(Configuration),
-}
-
-#[derive(Debug, Clone)]
-pub struct OperationService<T> {
-    tx: Sender<Operation<T>>,
-}
-
-impl<T> OperationService<T> {
-    pub fn build()  -> (Receiver<Operation<T>>, Self){
-	let (tx, rx) = mpsc::channel::<Operation<T>>(OPERATION_QUEUE_SIZE);
-	let service = Self::new(tx);
-	(rx, service)
-    }
-
-    pub fn new(tx: Sender<Operation<T>>) -> Self {
-        Self { tx }
+impl OperationService {
+    pub fn new() -> Self {
+        Self {}
     }
 
     pub fn find(&self, id: &str) -> Option<String> {
@@ -49,59 +25,5 @@ impl<T> OperationService<T> {
         } else {
             None
         }
-    }
-
-    pub fn schedule(&self, action: Action) -> Result<OperationId, OperationError> {
-	debug!(action=?action, "schedule action");
-
-	let operation = Operation::new(action);
-	let id = operation.id();
-
-	match self.tx.try_send(operation) {
-	    Ok(()) => Ok(id),
-	    Err(TrySendError::<_>::Full(_)) => Err(OperationError::QueueFull),
-	    Err(TrySendError::<_>::Closed(_)) => panic!("closed channel shot not happen"),
-	}
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use tokio::sync::mpsc;
-
-    use crate::models::operation::Operation;
-
-    use super::*;
-
-    fn service() -> (Receiver<Operation<Action>>, OperationService) {
-	let (tx, rx) = mpsc::channel::<Operation<Action>>(1);
-	let service = OperationService::new(tx);
-
-	(rx, service)
-    }
-    
-    #[tokio::test]
-    async fn schedule_action_successfully() {
-	let (mut rx, service) = service();
-	let config = Configuration{};
-
-	tokio::spawn(async move {
-	    let _ = rx.recv().await.unwrap();
-	});
-
-	assert!(service.schedule(Action::NewPod(config)).is_ok())
-    }
-
-    #[tokio::test]
-    async fn schedule_action_return_error_when_queue_is_full() {
-	let (mut rx, service) = service();
-	let config = Configuration{};
-
-	tokio::spawn(async move {
-	    let _ = rx.recv().await.unwrap();
-	});
-
-	assert!(service.schedule(Action::NewPod(config.clone())).is_ok());
-	assert_eq!(service.schedule(Action::NewPod(config.clone())), Err(OperationError::QueueFull));
     }
 }
