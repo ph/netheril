@@ -22,11 +22,11 @@
             inherit (pkgs) stdenv lib;
           in
             stdenv.mkDerivation  rec {
-              version = "2025110211";
+              version = "0250218.1";
               name = "ubuntu-noble-server-cloudimg";
 
               src = builtins.fetchurl {
-                url = "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img";
+                url = "https://cloud-images.ubuntu.com/focal/0250218.1/focal-server-cloudimg-amd64.img";
                 sha256 = "sha256:00vji71fsgg17qsc1hxknrfh5dm7p3rspskbbgsw5wf26lj37gdm";
               };
 
