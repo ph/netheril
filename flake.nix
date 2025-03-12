@@ -81,7 +81,7 @@
               };
             };
 
-        rustVersion = pkgs.rust-bin.stable.latest.default;
+        rustVersion = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
       in {
         devShell = pkgs.mkShell {
           buildInputs =
