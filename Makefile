@@ -1,7 +1,4 @@
 CACHE_DIR?=.cache
-CLOUD_INIT_FILE?=$(CACHE_DIR)/cloud-init.img
-CLOUD_IMAGE_FILE=$(CACHE_DIR)/cloud-image.raw
-CLOUD_IMAGE?=/tmp/focal-server-cloudimg-amd64.img
 
 ## check: Run the linters
 check: clippy fmt ## - Run the linter
@@ -38,30 +35,6 @@ clean: clean_cache ## - Clean the projects source, remove caches and dependencie
 ## clean_cache: Clean the cache directory.
 clean_cache: ## - clean the cache directory
 	rm -rf $(CACHE_DIR)
-
-$(CLOUD_INIT_FILE): 
-	mkdir -p $(CACHE_DIR)
-	rm -f $(CLOUD_INIT_FILE)
-	mkdosfs -n CIDATA -C $(CLOUD_INIT_FILE) 8192
-	mcopy -oi $(CLOUD_INIT_FILE) -s tests/data/cloud-init/user-data ::
-	mcopy -oi $(CLOUD_INIT_FILE) -s tests/data/cloud-init/meta-data ::
-	mcopy -oi $(CLOUD_INIT_FILE) -s tests/data/cloud-init/network-config ::
-
-$(CLOUD_IMAGE_FILE):
-	mkdir -p $(CACHE_DIR)
-	cp $(CLOUD_IMAGE) $(CLOUD_IMAGE_FILE)
-
-## vm: Build the test vm
-vm: $(CLOUD_INIT_FILE) $(CLOUD_IMAGE_FILE) ## - start a vm
-	@echo "Starting a VM"
-	cloud-hypervisor \
-	    --kernel $(HYPERVISOR_FIRMWARE) \
-	    --disk path=$(CLOUD_IMAGE_FILE) path=$(CLOUD_INIT_FILE) \
-	    --cpus boot=4 \
-	    --memory size=1024M \
-	    --net "tap=,mac=,ip=,mask=" \
-	    --serial tty \
-	    --console off
 
 ## help: Show this help.
 .PHONY: help
