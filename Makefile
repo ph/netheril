@@ -1,7 +1,11 @@
 CACHE_DIR?=.cache
 
 ## check: Run the linters
-check: clippy fmt ## - Run the linter
+check: clippy fmt deny ## - Run the linter
+
+## deny: Run the cargo deny
+deny: ## - Run cargo deny check command
+	cargo deny check
 
 ## fix: Run the linter and make changes
 fix: ## - Run linter and make the changes locally automatically

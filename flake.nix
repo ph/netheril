@@ -25,11 +25,11 @@
               (rustVersion.override { extensions = [ "rust-src" "rustfmt" "clippy" ]; })
               pkgs.rust-analyzer
               pkgs.cmake
-              pkgs.cloud-hypervisor
               pkgs.dosfstools
               pkgs.mtools
               pkgs.gh
               pkgs.act
+              pkgs.cargo-deny
             ];
         };
       });
