@@ -1,12 +1,13 @@
 use cli::handle_cli;
 
 mod actor;
+mod cli;
+mod logging;
+mod operation;
 pub mod api;
 pub mod app;
-mod cli;
 pub mod domains;
 pub mod error;
-mod logging;
 pub mod services;
 pub mod version;
 
