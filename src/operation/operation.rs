@@ -1,8 +1,10 @@
+use std::borrow::Cow;
+
 use chrono::{DateTime, Local, Utc};
 
 use super::{error::OperationError, Id};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum State {
     Queued,
     Working,
@@ -23,10 +25,28 @@ impl std::fmt::Display for State {
     }
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct TransitionAudit {
+    from: State,
+    to: State,
+    created_at: DateTime<Utc>,
+}
+
+impl TransitionAudit {
+    fn new(from: State, to: State) -> Self {
+        TransitionAudit {
+            from,
+            to,
+            created_at: Local::now().into(),
+        }
+    }
+}
+
 pub struct Operation {
     id: Id,
     created_at: DateTime<Utc>,
     state: State,
+    transitions_audits: Vec<TransitionAudit>,
 }
 
 impl Operation {
@@ -35,11 +55,18 @@ impl Operation {
             id: Id::generate(),
             created_at: Local::now().into(),
             state: State::Queued,
+            transitions_audits: Vec::new(),
         }
     }
 
     fn transition(&mut self, new_state: State) -> Result<(), OperationError> {
+        let from = self.state.clone();
+        let to = new_state.clone();
+
         self.state = new_state;
+
+        self.transitions_audits.push(TransitionAudit::new(from, to));
+
         Ok(())
     }
 
@@ -57,6 +84,10 @@ impl Operation {
                 to: new_state,
             }),
         }
+    }
+
+    pub fn transitions_audits(&self) -> Cow<Vec<TransitionAudit>> {
+        Cow::Borrowed(&self.transitions_audits)
     }
 }
 
@@ -127,5 +158,26 @@ mod test {
             let _ = operation.apply(Completed).unwrap();
             let _ = operation.apply(transition).is_err();
         }
+    }
+
+    #[test]
+    fn keep_transitions_audit() {
+        use State::*;
+
+        let mut operation = Operation::new();
+
+        let _ = operation.apply(Working);
+        let _ = operation.apply(Completed);
+
+        let audits = operation.transitions_audits();
+
+        assert_eq!(2, audits.len());
+
+        let TransitionAudit { from, to, .. } = audits[0].clone();
+
+        assert_eq!((Queued, Working), (from, to));
+
+        let TransitionAudit { from, to, .. } = audits[1].clone();
+        assert_eq!((Working, Completed), (from, to));
     }
 }
