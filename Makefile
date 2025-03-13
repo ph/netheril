@@ -8,7 +8,7 @@ check: clippy fmt ## - Run the linter
 
 ## fix: Run the linter and make changes
 fix: ## - Run linter and make the changes locally automatically
-	@cargo fmt --all
+	cargo fmt --all
 
 ## clippy: Run the clippy linter
 clippy: ## - Run the clippy linter
@@ -20,7 +20,7 @@ fmt: ## - Run the formatter
 	cargo fmt --all --check
 
 ## test: Run the tests
-test: linter fmt  ## - Run the tests
+test:   ## - Run the tests
 	cargo test
 
 ## doc: Generate the doc
@@ -34,7 +34,6 @@ ci-test: ## - Test the github workflow locally
 ## clean: Clean the project
 clean: clean_cache ## - Clean the projects source, remove caches and dependencies
 	cargo clean
-
 
 ## clean_cache: Clean the cache directory.
 clean_cache: ## - clean the cache directory
