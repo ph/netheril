@@ -1,4 +1,6 @@
 #![allow(unused)]
+use std::marker::PhantomData;
+
 use tokio::sync::mpsc::Sender;
 
 use super::{error::OperationError, operation_model::State, Id, Message};
@@ -31,14 +33,42 @@ pub struct Data {
     sender: Sender<Message>,
 }
 
-fn new_monitor(id: Id, sender: Sender<Message>) -> Monitor<Queued> {
+pub fn new_monitor(id: Id, sender: Sender<Message>) -> Monitor<Queued> {
     Monitor {
         inner: Data { id, sender },
         state: Queued {},
     }
 }
 
-pub struct Monitor<S: TState> {
+pub fn reify_monitor(id: Id, sender: Sender<Message>, state: State) -> Box<Monitor<dyn TState> > {
+    let inner = Data { id, sender };
+
+    match state {
+	State::Queued => Box::new(Monitor{
+	    inner,
+	    state: Queued {},
+	}),
+	State::Working => Box::new(Monitor{
+	    inner,
+	    state: Working {}
+	}),
+	State::Failed => Box::new(Monitor {
+	    inner,
+	    state: Failed {}
+	}),
+	State::Canceled => Box::new(Monitor {
+	    inner, 
+	    state: Canceled {}
+
+	}),
+        State::Completed => Box::new(Monitor {
+	    inner,
+	    state: Completed {},
+	}),
+    }
+}
+
+pub struct Monitor<S: TState + ?Sized> {
     inner: Data,
     state: S,
 }

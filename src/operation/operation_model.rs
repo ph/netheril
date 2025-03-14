@@ -43,6 +43,7 @@ impl TransitionAudit {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Operation {
     id: Id,
     created_at: DateTime<Utc>,
@@ -62,6 +63,10 @@ impl Operation {
 
     pub fn id(&self) -> Id {
         self.id
+    }
+
+    pub fn state(&self) -> State {
+        self.state.clone()
     }
 
     pub fn apply(&mut self, new_state: State) -> Result<(), OperationError> {
