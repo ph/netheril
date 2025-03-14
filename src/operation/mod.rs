@@ -1,7 +1,13 @@
-mod error;
-mod operation;
+#![allow(unused)]
+use std::collections::BTreeMap;
 
-#[derive(Debug)]
+use operation_model::{Operation, State};
+
+mod error;
+mod monitor;
+mod operation_model;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Id(uuid::Uuid);
 
 impl Id {
@@ -16,20 +22,24 @@ impl std::fmt::Display for Id {
     }
 }
 
-// struct OperationManagerActor {
-//     operations: BTreeMap<Id, Operation>,
-// }
+struct OperationManagerActor {
+    operations: BTreeMap<Id, Operation>,
+}
 
-// impl OperationManagerActor {
-//     pub fn new() -> Self {
-//         OperationmanagerActor {}
-//     }
-// }
+impl OperationManagerActor {
+    pub fn new() -> Self {
+        OperationManagerActor {
+            operations: BTreeMap::new(),
+        }
+    }
+}
 
-// enum Message {
-//     NewOperation,
-//     WW,
-// }
+#[derive(Debug, PartialEq)]
+enum Message {
+    Quit,
+    NewOperation,
+    UpdateOperation { id: Id, state: State },
+}
 
 // #[async_trait]
 // impl Actor for OperationManagerActor {

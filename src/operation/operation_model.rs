@@ -1,3 +1,4 @@
+#![allow(unused)]
 use std::borrow::Cow;
 
 use chrono::{DateTime, Local, Utc};
@@ -102,8 +103,8 @@ mod test {
         let transitions = vec![(Queued, Working), (Queued, Failed), (Queued, Canceled)];
 
         for (_, new_state) in transitions {
-            let mut operation = Operation::new();
-            let _ = operation.apply(new_state);
+            let mut op = Operation::new();
+            op.apply(new_state).unwrap();
         }
     }
 
@@ -114,9 +115,9 @@ mod test {
         let transitions = vec![(Working, Failed), (Working, Canceled), (Working, Completed)];
 
         for (_, new_state) in transitions {
-            let mut operation = Operation::new();
-            let _ = operation.apply(Working).unwrap();
-            let _ = operation.apply(new_state);
+            let mut op = Operation::new();
+            op.apply(Working).unwrap();
+            op.apply(new_state).unwrap();
         }
     }
 
@@ -127,9 +128,9 @@ mod test {
         let transitions = vec![Working, Queued, Canceled, Completed, Failed];
 
         for transition in transitions {
-            let mut operation = Operation::new();
-            let _ = operation.apply(Failed).unwrap();
-            let _ = operation.apply(transition).is_err();
+            let mut op = Operation::new();
+            op.apply(Failed).unwrap();
+            assert!(op.apply(transition).is_err());
         }
     }
 
@@ -140,9 +141,9 @@ mod test {
         let transitions = vec![Working, Queued, Canceled, Failed, Completed];
 
         for transition in transitions {
-            let mut operation = Operation::new();
-            let _ = operation.apply(Canceled).unwrap();
-            let _ = operation.apply(transition).is_err();
+            let mut op = Operation::new();
+            op.apply(Canceled).unwrap();
+            assert!(op.apply(transition).is_err());
         }
     }
 
@@ -153,10 +154,10 @@ mod test {
         let transitions = vec![Working, Queued, Canceled, Failed, Completed];
 
         for transition in transitions {
-            let mut operation = Operation::new();
-            let _ = operation.apply(Working).unwrap();
-            let _ = operation.apply(Completed).unwrap();
-            let _ = operation.apply(transition).is_err();
+            let mut op = Operation::new();
+            op.apply(Working).unwrap();
+            op.apply(Completed).unwrap();
+            assert!(op.apply(transition).is_err());
         }
     }
 
@@ -164,12 +165,12 @@ mod test {
     fn keep_transitions_audit() {
         use State::*;
 
-        let mut operation = Operation::new();
+        let mut op = Operation::new();
 
-        let _ = operation.apply(Working);
-        let _ = operation.apply(Completed);
+        op.apply(Working).unwrap();
+        op.apply(Completed).unwrap();
 
-        let audits = operation.transitions_audits();
+        let audits = op.transitions_audits();
 
         assert_eq!(2, audits.len());
 
