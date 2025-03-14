@@ -51,7 +51,7 @@ pub struct Operation {
 }
 
 impl Operation {
-    fn new() -> Operation {
+    pub fn new() -> Operation {
         Operation {
             id: Id::generate(),
             created_at: Local::now().into(),
@@ -60,15 +60,8 @@ impl Operation {
         }
     }
 
-    fn transition(&mut self, new_state: State) -> Result<(), OperationError> {
-        let from = self.state.clone();
-        let to = new_state.clone();
-
-        self.state = new_state;
-
-        self.transitions_audits.push(TransitionAudit::new(from, to));
-
-        Ok(())
+    pub fn id(&self) -> Id {
+        self.id
     }
 
     pub fn apply(&mut self, new_state: State) -> Result<(), OperationError> {
@@ -89,6 +82,17 @@ impl Operation {
 
     pub fn transitions_audits(&self) -> Cow<Vec<TransitionAudit>> {
         Cow::Borrowed(&self.transitions_audits)
+    }
+
+    fn transition(&mut self, new_state: State) -> Result<(), OperationError> {
+        let from = self.state.clone();
+        let to = new_state.clone();
+
+        self.state = new_state;
+
+        self.transitions_audits.push(TransitionAudit::new(from, to));
+
+        Ok(())
     }
 }
 

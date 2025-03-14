@@ -141,14 +141,7 @@ mod test {
         let (id, monitor, mut rx) = monitor();
 
         let handle = tokio::spawn(async move {
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Working
-                },
-                m
-            );
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Working }));
         });
 
         monitor.start().await.unwrap();
@@ -160,14 +153,7 @@ mod test {
         let (id, monitor, mut rx) = monitor();
 
         let handle = tokio::spawn(async move {
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Canceled
-                },
-                m
-            );
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Canceled }));
         });
 
         monitor.cancel().await.unwrap();
@@ -179,23 +165,8 @@ mod test {
         let (id, monitor, mut rx) = monitor();
 
         let handle = tokio::spawn(async move {
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Working
-                },
-                m
-            );
-
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Canceled
-                },
-                m
-            );
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Working}));
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Canceled }));
         });
 
         monitor.start().await.unwrap();
@@ -208,23 +179,8 @@ mod test {
         let (id, monitor, mut rx) = monitor();
 
         let handle = tokio::spawn(async move {
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Working
-                },
-                m
-            );
-
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Failed
-                },
-                m
-            );
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Working }));
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Failed }));
         });
 
         let monitor = monitor.start().await.unwrap();
@@ -237,23 +193,8 @@ mod test {
         let (id, monitor, mut rx) = monitor();
 
         let handle = tokio::spawn(async move {
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Working
-                },
-                m
-            );
-
-            let m = rx.recv().await.unwrap();
-            assert_eq!(
-                Message::UpdateOperation {
-                    id,
-                    state: State::Canceled
-                },
-                m
-            );
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Working }));
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation { id, state: State::Canceled }));
         });
 
         let monitor = monitor.start().await.unwrap();

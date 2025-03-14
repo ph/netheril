@@ -1,13 +1,17 @@
 #![allow(unused)]
 use std::collections::BTreeMap;
 
+use async_trait::async_trait;
 use operation_model::{Operation, State};
+use tokio::sync::oneshot;
+
+use crate::actor::{Actor, ActorError, Context};
 
 mod error;
 mod monitor;
 mod operation_model;
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Ord, PartialOrd, Eq)]
 pub struct Id(uuid::Uuid);
 
 impl Id {
@@ -22,29 +26,45 @@ impl std::fmt::Display for Id {
     }
 }
 
-struct OperationManagerActor {
+struct OperationStateManagerActor {
     operations: BTreeMap<Id, Operation>,
 }
 
-impl OperationManagerActor {
+impl OperationStateManagerActor {
     pub fn new() -> Self {
-        OperationManagerActor {
+        OperationStateManagerActor {
             operations: BTreeMap::new(),
         }
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 enum Message {
     Quit,
-    NewOperation,
+    NewOperation{ reply_to: oneshot::Sender<Id> },
     UpdateOperation { id: Id, state: State },
 }
 
-// #[async_trait]
-// impl Actor for OperationManagerActor {
-//     type Message = Message;
-// }
+#[async_trait]
+impl Actor for OperationStateManagerActor {
+    type Message = Message;
+
+    async fn handle(&mut self, _ctx: &Context, message: Self::Message) -> Result<(), ActorError> {
+	use Message::*;
+
+	match message {
+	    NewOperation { reply_to } =>  {
+		let operation = Operation::new();
+		let id = operation.id().clone();
+		self.operations.insert(id.clone(), operation);
+		reply_to.send(id.clone());
+	    },
+	    _ => todo!(),
+	}
+
+	Ok(())
+    }
+}
 
 // struct OperationManagerHandle {}
 
