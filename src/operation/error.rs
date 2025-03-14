@@ -1,7 +1,7 @@
 #![allow(unused)]
 use tokio::sync::{mpsc::error::SendError, oneshot};
 
-use super::{operation_model::State, Id};
+use super::{states::State, Id};
 
 #[derive(Debug)]
 pub enum OperationError {
@@ -9,6 +9,7 @@ pub enum OperationError {
     InvalidTransition { from: State, to: State },
     Sender,
     Receiver,
+    StateMismatch { expected: State, current: State },
 }
 
 impl std::error::Error for OperationError {}
@@ -22,6 +23,13 @@ impl std::fmt::Display for OperationError {
             }
             OperationError::Sender => write!(f, "sender error on channel"),
             OperationError::Receiver => write!(f, "receiver error on channel"),
+            OperationError::StateMismatch { expected, current } => {
+                write!(
+                    f,
+                    "expected state `{}`, current state: `{}`",
+                    expected, current
+                )
+            }
         }
     }
 }
