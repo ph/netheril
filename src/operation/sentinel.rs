@@ -30,20 +30,21 @@ impl Sentinel {
         self.state.clone()
     }
 
-    pub async fn apply(&mut self, new_state: State) -> Result<(), OperationError> {
-        match (self.state.clone(), new_state.clone()) {
-            (State::Queued, State::Working) => self.transition(new_state).await,
-            // transition to terminal states.
-            (State::Queued, State::Failed) => self.transition(new_state).await,
-            (State::Queued, State::Canceled) => self.transition(new_state).await,
-            (State::Working, State::Failed) => self.transition(new_state).await,
-            (State::Working, State::Canceled) => self.transition(new_state).await,
-            (State::Working, State::Completed) => self.transition(new_state).await,
-            _ => Err(OperationError::InvalidTransition {
-                from: self.state.clone(),
-                to: new_state,
-            }),
-        }
+    pub async fn start(&mut self) -> Result<(), OperationError> {
+	self.apply(State::Working).await
+    }
+
+    pub async fn fail(&mut self, _error: OperationError) -> Result<(), OperationError> {
+	self.apply(State::Failed).await
+    }
+
+    pub async fn cancel(&mut self) -> Result<(), OperationError> {
+	self.apply(State::Canceled).await
+
+    }
+
+    pub async fn complete(&mut self) -> Result<(), OperationError> {
+	self.apply(State::Completed).await
     }
 
     async fn transition(&mut self, new_state: State) -> Result<(), OperationError> {
@@ -65,95 +66,203 @@ impl Sentinel {
 	self.sender.send(message).await?;
 	Ok(())
     }
+
+    async fn apply(&mut self, new_state: State) -> Result<(), OperationError> {
+	match (self.state.clone(), new_state.clone()) {
+	    (State::Queued, State::Working) => self.transition(new_state).await,
+	    (State::Queued, State::Canceled) => self.transition(new_state).await,
+
+	    // transition to terminal states.
+	    (State::Working, State::Failed) => self.transition(new_state).await,
+	    (State::Working, State::Canceled) => self.transition(new_state).await,
+	    (State::Working, State::Completed) => self.transition(new_state).await,
+	    _ => Err(OperationError::InvalidTransition {
+		from: self.state.clone(),
+		to: new_state,
+	    }),
+	}
+    }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+#[cfg(test)]
+mod test {
+    use tokio::sync::mpsc::Receiver;
 
-//     #[test]
-//     fn apply_valid_transitions_from_queued_state() {
-//         use State::*;
+    use super::*;
 
-//         let transitions = vec![(Queued, Working), (Queued, Failed), (Queued, Canceled)];
+    fn sentinel() -> (Id, Receiver<Message>, Sentinel) {
+	let (tx, rx) = tokio::sync::mpsc::channel(1);
+	let id = Id::generate();
+	let sentinel = Sentinel::new(id.clone(), tx);
+	(id, rx, sentinel)
+    }
 
-//         for (_, new_state) in transitions {
-//             let mut op = Operation::new();
-//             op.apply(new_state).unwrap();
-//         }
-//     }
+    fn sentinel_reify(state: State) -> (Id, Receiver<Message>, Sentinel) {
+	let (tx, rx) = tokio::sync::mpsc::channel(1);
+	let id = Id::generate();
+	let sentinel = Sentinel::reify(id.clone(), state, tx);
+	(id, rx, sentinel)
+    }
 
-//     #[test]
-//     fn apply_valid_transitions_from_working() {
-//         use State::*;
+    #[tokio::test]
+    async fn valid_from_queued_to_start() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//         let transitions = vec![(Working, Failed), (Working, Canceled), (Working, Completed)];
+	let handle = tokio::spawn(async move {
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Queued,
+		to: State::Working,
+	    }))
+	});
 
-//         for (_, new_state) in transitions {
-//             let mut op = Operation::new();
-//             op.apply(Working).unwrap();
-//             op.apply(new_state).unwrap();
-//         }
-//     }
+	sentinel.start().await;
+	handle.await;
+    }
 
-//     #[test]
-//     fn apply_invalid_transitions_from_failed() {
-//         use State::*;
+    #[tokio::test]
+    async fn valid_from_queued_to_cancel() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//         let transitions = vec![Working, Queued, Canceled, Completed, Failed];
+	let handle = tokio::spawn(async move {
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Queued,
+		to: State::Canceled,
+	    }))
+	});
 
-//         for transition in transitions {
-//             let mut op = Operation::new();
-//             op.apply(Failed).unwrap();
-//             assert!(op.apply(transition).is_err());
-//         }
-//     }
+	sentinel.cancel().await;
+	handle.await;
+    }
 
-//     #[test]
-//     fn apply_invalid_transitions_from_canceled() {
-//         use State::*;
+    #[tokio::test]
+    async fn invalid_from_queued_to_failed() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//         let transitions = vec![Working, Queued, Canceled, Failed, Completed];
+	assert!(matches!(
+	    sentinel.fail(OperationError::Sender).await,
+	    Err(OperationError::InvalidTransition {
+		from: State::Queued,
+		to: State::Failed
+	    }))
+	);
+    }
 
-//         for transition in transitions {
-//             let mut op = Operation::new();
-//             op.apply(Canceled).unwrap();
-//             assert!(op.apply(transition).is_err());
-//         }
-//     }
+    #[tokio::test]
+    async fn invalid_from_queued_to_complete() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//     #[test]
-//     fn apply_invalid_transitions_from_completed() {
-//         use State::*;
+	assert!(matches!(
+	    sentinel.complete().await,
+	    Err(OperationError::InvalidTransition {
+		from: State::Queued,
+		to: State::Completed
+	    }))
+	);
+    }
 
-//         let transitions = vec![Working, Queued, Canceled, Failed, Completed];
+    #[tokio::test]
+    async fn valid_from_working_to_cancel() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//         for transition in transitions {
-//             let mut op = Operation::new();
-//             op.apply(Working).unwrap();
-//             op.apply(Completed).unwrap();
-//             assert!(op.apply(transition).is_err());
-//         }
-//     }
+	let handle = tokio::spawn(async move {
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Queued,
+		to: State::Working,
+	    }));
 
-//     #[test]
-//     fn keep_transitions_audit() {
-//         use State::*;
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Working,
+		to: State::Canceled,
+	    }))
+	});
 
-//         let mut op = Operation::new();
+	sentinel.start().await;
+	sentinel.cancel().await;
+	handle.await;
+    }
 
-//         op.apply(Working).unwrap();
-//         op.apply(Completed).unwrap();
+    #[tokio::test]
+    async fn valid_from_working_to_failed() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//         let audits = op.transitions_audits();
+	let handle = tokio::spawn(async move {
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Queued,
+		to: State::Working,
+	    }));
 
-//         assert_eq!(2, audits.len());
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Working,
+		to: State::Failed,
+	    }))
+	});
 
-//         let TransitionAudit { from, to, .. } = audits[0].clone();
+	sentinel.start().await;
+	sentinel.fail(OperationError::Sender).await;
+	handle.await;
+    }
 
-//         assert_eq!((Queued, Working), (from, to));
+    #[tokio::test]
+    async fn valid_from_working_to_complete() {
+	let (id, mut rx, mut sentinel) = sentinel();
 
-//         let TransitionAudit { from, to, .. } = audits[1].clone();
-//         assert_eq!((Working, Completed), (from, to));
-//     }
-// }
+	let handle = tokio::spawn(async move {
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Queued,
+		to: State::Working,
+	    }));
+
+	    assert!(matches!(rx.recv().await.unwrap(), Message::UpdateOperation{
+		id,
+		from: State::Working,
+		to: State::Completed,
+	    }))
+	});
+
+	sentinel.start().await;
+	sentinel.complete().await;
+	handle.await;
+    }
+
+    #[tokio::test]
+    async fn invalid_from_complete_to_fail() {
+	let (id, mut rx, mut sentinel) = sentinel_reify(State::Completed);
+
+	assert!(matches!(
+	    sentinel.fail(OperationError::Sender).await,
+	    Err(OperationError::InvalidTransition {
+		from: State::Completed,
+		to: State::Failed
+	    }))
+	);
+    }
+
+    #[tokio::test]
+    async fn invalid_from_complete_to_cancel() {
+	let (id, mut rx, mut sentinel) = sentinel_reify(State::Completed);
+
+	assert!(matches!(
+	    sentinel.cancel().await,
+	    Err(OperationError::InvalidTransition {
+		from: State::Completed,
+		to: State::Canceled
+	    }))
+	);
+    }
+
+    #[tokio::test]
+    async fn reify_with_initial_state() {
+	let (tx, rx) = tokio::sync::mpsc::channel(1);
+	let id = Id::generate();
+	let sentinel = Sentinel::reify(id.clone(), State::Failed, tx);
+
+	assert_eq!(State::Failed, sentinel.state());
+    }
+}

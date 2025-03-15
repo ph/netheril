@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 use async_trait::async_trait;
 use error::OperationError;
 use operation_model::{Operation};
+use sentinel::Sentinel;
 use states::State;
 use tokio::sync::oneshot;
 
@@ -116,12 +117,12 @@ impl OperationStateManagerHandle {
 	Ok(rx.await?)
     }
 
-    // pub async fn new_monitor(&self, id: Id) -> Result<Box<Monitor<dyn TState>>, OperationError> {
-
-    // 	    Some(operation) => Ok(reify_monitor(id, self.sender.clone(), operation.state())),
-    // 	    None => Err(OperationError::NotFound(id)),
-    // 	}
-    // }
+    pub async fn new_sentinel(&self, id: Id) -> Result<Sentinel, OperationError> {
+	match self.lookup_operation(&id).await? {
+	    Some(operation) => Ok(Sentinel::reify(id.clone(), operation.state(), self.sender.clone())),
+	    None => Err(OperationError::NotFound(id)),
+	}
+    }
 }
 
 async fn execute_operation_state_manager(mut manager: OperationStateManagerActor) {
@@ -132,48 +133,48 @@ async fn execute_operation_state_manager(mut manager: OperationStateManagerActor
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
+#[cfg(test)]
+mod test {
+    use super::*;
 
-//     #[tokio::test]
-//     async fn create_new_operation() {
-// 	let op_state = OperationStateManagerHandle::new();
-// 	let id = op_state.new_operation().await.unwrap();
-// 	println!("id: {}", id);
-//     }
+    #[tokio::test]
+    async fn create_new_operation() {
+	let op_state = OperationStateManagerHandle::new();
+	let id = op_state.new_operation().await.unwrap();
+	println!("id: {}", id);
+    }
 
-//     #[tokio::test]
-//     async fn return_true_when_operation_exists() {
-// 	let op_state = OperationStateManagerHandle::new();
-// 	let id = op_state.new_operation().await.unwrap();
-// 	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
-// 	assert_eq!(operation.id(), id);
-//     }
+    #[tokio::test]
+    async fn return_true_when_operation_exists() {
+	let op_state = OperationStateManagerHandle::new();
+	let id = op_state.new_operation().await.unwrap();
+	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
+	assert_eq!(operation.id(), id);
+    }
 
-//     #[tokio::test]
-//     async fn cant_create_monitor_when_operation_does_not_exist() {
-// 	let op_state = OperationStateManagerHandle::new();
-// 	let id = Id::generate();
-// 	assert!(matches!(op_state.new_monitor(id.clone()).await, Err(OperationError::NotFound(id))))
-//     }
+    #[tokio::test]
+    async fn cant_create_sentinel_when_operation_does_not_exist() {
+	let op_state = OperationStateManagerHandle::new();
+	let id = Id::generate();
+	assert!(matches!(op_state.new_sentinel(id.clone()).await, Err(OperationError::NotFound(id))))
+    }
 
-//     #[tokio::test]
-//     async fn create_monitor_when_operation_exists() {
-// 	let op_state = OperationStateManagerHandle::new();
-// 	let id = op_state.new_operation().await.unwrap();
-// 	let monitor = op_state.new_monitor(id.clone()).await.unwrap();
-// 	assert_eq!(id, monitor.id());
-//     }
+    // #[tokio::test]
+    // async fn create_monitor_when_operation_exists() {
+    // 	let op_state = OperationStateManagerHandle::new();
+    // 	let id = op_state.new_operation().await.unwrap();
+    // 	let monitor = op_state.new_sentinel(id.clone()).await.unwrap();
+    // 	assert_eq!(id, monitor.id());
+    // }
 
-//     // #[tokio::test]
-//     // async fn monitor_can_update_operation_state() {
-//     // 	let op_state = OperationStateManagerHandle::new();
-//     // 	let id = op_state.new_operation().await.unwrap();
-//     // 	let monitor = op_state.new_monitor(id.clone()).await.unwrap();
-//     // 	monitor.start().await.unwrap();
+    // #[tokio::test]
+    // async fn monitor_can_update_operation_state() {
+    // 	let op_state = OperationStateManagerHandle::new();
+    // 	let id = op_state.new_operation().await.unwrap();
+    // 	let monitor = op_state.new_sentinel(id.clone()).await.unwrap();
+    // 	monitor.start().await.unwrap();
 
-//     // 	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
-//     // 	assert_eq!(operation.state(), State::Working);
-//     // }
-// }
+    // 	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
+    // 	assert_eq!(operation.state(), State::Working);
+    // }
+}
