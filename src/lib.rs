@@ -7,6 +7,7 @@ mod cli;
 pub mod domains;
 pub mod error;
 mod logging;
+mod operation;
 pub mod services;
 pub mod version;
 
