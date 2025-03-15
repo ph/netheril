@@ -61,17 +61,13 @@ impl Actor for OperationStateManagerActor {
     async fn handle(&mut self, _ctx: &Context, message: Self::Message) -> Result<(), ActorError> {
 	use Message::*;
 
-	println!("inside actor message: {:?}", message);
 
 	match message {
 	    NewOperation { reply_to } =>  {
-		println!("new operation");
 		let operation = Operation::new();
 		let id = operation.id().clone();
 		self.operations.insert(id.clone(), operation);
-		println!("before operation: {:?}", id);
 		reply_to.send(id.clone());
-		println!("new operation: {:?}", id);
 	    },
 	    LookupOperation { id, reply_to } => {
 		let operation = self.operations.get(&id).cloned();
@@ -128,7 +124,6 @@ impl OperationStateManagerHandle {
 async fn execute_operation_state_manager(mut manager: OperationStateManagerActor) {
     let ctx = Context::new();
     while let Some(message) = manager.receiver.recv().await {
-	println!("message: {:?}", message);
 	manager.handle(&ctx, message).await.unwrap();
     }
 }
@@ -141,7 +136,6 @@ mod test {
     async fn create_new_operation() {
 	let op_state = OperationStateManagerHandle::new();
 	let id = op_state.new_operation().await.unwrap();
-	println!("id: {}", id);
     }
 
     #[tokio::test]
@@ -159,22 +153,26 @@ mod test {
 	assert!(matches!(op_state.new_sentinel(id.clone()).await, Err(OperationError::NotFound(id))))
     }
 
-    // #[tokio::test]
-    // async fn create_monitor_when_operation_exists() {
-    // 	let op_state = OperationStateManagerHandle::new();
-    // 	let id = op_state.new_operation().await.unwrap();
-    // 	let monitor = op_state.new_sentinel(id.clone()).await.unwrap();
-    // 	assert_eq!(id, monitor.id());
-    // }
+    #[tokio::test]
+    async fn create_sentinel_when_operation_exists() {
+	let op_state = OperationStateManagerHandle::new();
+	let id = op_state.new_operation().await.unwrap();
+	let sentinel = op_state.new_sentinel(id).await.unwrap();
+	assert_eq!(sentinel.id(), id);
+    }
 
-    // #[tokio::test]
-    // async fn monitor_can_update_operation_state() {
-    // 	let op_state = OperationStateManagerHandle::new();
-    // 	let id = op_state.new_operation().await.unwrap();
-    // 	let monitor = op_state.new_sentinel(id.clone()).await.unwrap();
-    // 	monitor.start().await.unwrap();
+    #[tokio::test]
+    async fn update_operation_state_from_sentinel() {
+	let op_state = OperationStateManagerHandle::new();
+	let id = op_state.new_operation().await.unwrap();
+	let mut sentinel = op_state.new_sentinel(id.clone()).await.unwrap();
 
-    // 	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
-    // 	assert_eq!(operation.state(), State::Working);
-    // }
+	sentinel.start().await.unwrap();
+	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
+	assert_eq!(operation.state(), State::Working);
+
+	sentinel.complete().await.unwrap();
+	let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();
+	assert_eq!(operation.state(), State::Completed);
+    }
 }
