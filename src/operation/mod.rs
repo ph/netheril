@@ -73,9 +73,9 @@ impl Actor for OperationStateManagerActor {
         match message {
             NewOperation { reply_to } => {
                 let operation = Operation::new();
-                let id = operation.id().clone();
-                self.operations.insert(id.clone(), operation);
-                reply_to.send(id.clone());
+                let id = operation.id();
+                self.operations.insert(id, operation);
+                reply_to.send(id);
             }
             LookupOperation { id, reply_to } => {
                 let operation = self.operations.get(&id).cloned();
@@ -119,7 +119,7 @@ impl OperationStateManagerHandle {
         let (tx, rx) = oneshot::channel();
         self.sender
             .send(Message::LookupOperation {
-                id: id.clone(),
+                id: *id,
                 reply_to: tx,
             })
             .await?;
@@ -128,11 +128,7 @@ impl OperationStateManagerHandle {
 
     pub async fn new_sentinel(&self, id: Id) -> Result<Sentinel, OperationError> {
         match self.lookup_operation(&id).await? {
-            Some(operation) => Ok(Sentinel::reify(
-                id.clone(),
-                operation.state(),
-                self.sender.clone(),
-            )),
+            Some(operation) => Ok(Sentinel::reify(id, operation.state(), self.sender.clone())),
             None => Err(OperationError::NotFound(id)),
         }
     }
@@ -168,7 +164,7 @@ mod test {
         let op_state = OperationStateManagerHandle::new();
         let id = Id::generate();
         assert!(matches!(
-            op_state.new_sentinel(id.clone()).await,
+            op_state.new_sentinel(id).await,
             Err(OperationError::NotFound(id))
         ))
     }
@@ -185,7 +181,7 @@ mod test {
     async fn update_operation_state_from_sentinel() {
         let op_state = OperationStateManagerHandle::new();
         let id = op_state.new_operation().await.unwrap();
-        let mut sentinel = op_state.new_sentinel(id.clone()).await.unwrap();
+        let mut sentinel = op_state.new_sentinel(id).await.unwrap();
 
         sentinel.start().await.unwrap();
         let operation = op_state.lookup_operation(&id).await.unwrap().unwrap();

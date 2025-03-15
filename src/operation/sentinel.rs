@@ -54,7 +54,7 @@ impl Sentinel {
 
     async fn communicate_changes(&self, from: State, to: State) -> Result<(), OperationError> {
         let message = Message::UpdateOperation {
-            id: self.id.clone(),
+            id: self.id,
             from,
             to,
         };
@@ -89,14 +89,14 @@ mod test {
     fn sentinel() -> (Id, Receiver<Message>, Sentinel) {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         let id = Id::generate();
-        let sentinel = Sentinel::new(id.clone(), tx);
+        let sentinel = Sentinel::new(id, tx);
         (id, rx, sentinel)
     }
 
     fn sentinel_reify(state: State) -> (Id, Receiver<Message>, Sentinel) {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         let id = Id::generate();
-        let sentinel = Sentinel::reify(id.clone(), state, tx);
+        let sentinel = Sentinel::reify(id, state, tx);
         (id, rx, sentinel)
     }
 
@@ -281,7 +281,7 @@ mod test {
     async fn reify_with_initial_state() {
         let (tx, rx) = tokio::sync::mpsc::channel(1);
         let id = Id::generate();
-        let sentinel = Sentinel::reify(id.clone(), State::Failed, tx);
+        let sentinel = Sentinel::reify(id, State::Failed, tx);
 
         assert_eq!(State::Failed, sentinel.state());
     }
